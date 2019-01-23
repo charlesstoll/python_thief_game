@@ -11,15 +11,20 @@ class Space(object):
             self.orientation = "up"
         else:
             self.orientation = "down"
-        # init the array. needs to be filled at a later time though
-        self.neighbors = []
 
     # this should be readable for boards up to size 6 (no double digit cols)
     def __repr__(self):
-        if self.orientation == "up":
-            return "/" + str(self.row) + "," + str(self.col) + "\\"
+        piece = self.board.get_piece_at_location(self.row, self.col)
+        if type(piece) is Thief:
+            rep = "t"
+        elif type(piece) is Policeman:
+            rep = "p"
         else:
-            return "\\" + str(self.row) + "," +  str(self.col) + "/"
+            rep = " "
+        if self.orientation == "up":
+            return "/" + str(self.row) + "," + str(self.col) + rep + "\\"
+        else:
+            return "\\" + str(self.row) + "," +  str(self.col) + rep + "/"
     
     def print_neighbors(self):
         print("left: " + str(self.board.get_space_left(self)))    
@@ -44,7 +49,17 @@ class Piece(object):
         self.row = row
         self.col = col
         self.board = board
-        self.on_board = False
+        if board.in_bounds(row, col):
+            self.on_board = True
+        else:
+            self.on_board = False
+
+    def __repr__(self):
+        if self.on_board:
+            return "( " + str(self.row) + " , " + str(self.col) + " )"
+        else:
+            return "Not on board"
+
 
     def place(self, row, col):
         if not self.board.is_occupied(row, col):
@@ -73,9 +88,10 @@ class Piece(object):
             next_space = self.board.get_space_right(self.row, self.col)
         else:
             next_space = None
-
         # now do some safety/sanity checks
         if next_space == None:
+            return False
+        if self.board.is_occupied(next_space.row, next_space.col):
             return False
         
         # try to place and return
@@ -86,9 +102,15 @@ class Thief(Piece):
     def __init__(self, row, col, board):
         Piece.__init__(self, row, col, board)
 
+    def __repr__(self):
+        return "Thief: " + Piece.__repr__(self)
+
 class Policeman(Piece):
     def __init__(self, row, col, board):
         Piece.__init__(self, row, col, board)
+
+    def __repr__(self):
+        return "Policeman: " + Piece.__repr__(self)
 
 class Board(object):
     def __init__(self, board_size=4, space_width=100, num_police=2):
@@ -126,10 +148,12 @@ class Board(object):
     def print_board(self):
         for row in range(self.board_size):
             for empty_col in range(self.board_size - row - 1):
-                sys.stdout.write("       ")
+                sys.stdout.write("        ")
             print(self.space_array[row])
-        # TODO: add printing of thieves and police
         
+        for piece in self.all_pieces:
+            print(piece)
+
     # returns true if the given row, col are on the edge of the board
     def is_an_edge(self, row, col):
         #left edge of triangle
@@ -153,7 +177,7 @@ class Board(object):
 
     # returns the space at row, col
     def get_space(self, row, col):
-        if in_bounds(row, col):
+        if self.in_bounds(row, col):
             return self.space_array[row][col]
         return None
 
@@ -211,11 +235,20 @@ class Board(object):
 
     # find out if there is already something in a space
     def is_occupied(self, row, col):
-        if not in_bounds(self, row, col):
+        if not self.in_bounds(row, col):
             # not great to say that it is occupied since it is not a space
             # but whatever... if it is an issue we can fix it them
             return True
-        for piece in all_pieces:
+        for piece in self.all_pieces:
             if piece.row == row and piece.col == col:
                 return True
         return False
+
+    # find out what piece is on a square
+    def get_piece_at_location(self, row, col):
+        if not self.is_occupied(row, col):
+            return None
+        for piece in self.all_pieces:
+            if piece.row == row and piece.col == col:
+                return piece
+        return None
