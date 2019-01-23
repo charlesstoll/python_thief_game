@@ -1,4 +1,4 @@
-
+import sys
 
 class Space(object):
     def __init__(self, row, col, board, space_width=100):
@@ -15,14 +15,29 @@ class Space(object):
         self.neighbors = []
 
     # this should be readable for boards up to size 6 (no double digit cols)
-    def __str__(self):
+    def __repr__(self):
         if self.orientation == "up":
-            return "|" + str(self.row) + str(self.col) + " up |"
+            return "/" + str(self.row) + "," + str(self.col) + "\\"
         else:
-            return "|" + str(self.row) + str(self.col) + "down|"
+            return "\\" + str(self.row) + "," +  str(self.col) + "/"
     
-    def get_neighbors(self):
-        self.neighbors.append(self.board.get_neighbors(self.row, self.col))
+    def print_neighbors(self):
+        print("left: " + str(self.board.get_space_left(self)))    
+        print("right: " + str(self.board.get_space_right(self)))    
+        print("up: " + str(self.board.get_space_up(self)))    
+        print("down: " + str(self.board.get_space_down(self)))    
+
+    def get_left_neighbor(self):
+        return self.board.get_space_left(self.row, self.col)
+
+    def get_right_neighbor(self):
+        return self.board.get_space_right(self.row, self.col)
+
+    def get_above_neighbor(self):
+        return self.board.get_space_above(self.row, self.col)
+
+    def get_below_neighbor(self):
+        return self.board.get_space_below(self.row, self.col)
 
 class Thief(object):
     def __init__(self, location, board):
@@ -44,15 +59,24 @@ class Board(object):
         self.space_array = []
         for row in range(board_size):
             tmp_row = []
-            for col in range(row+1):
+            for col in range(row*2 + 1):
                 print("adding row " + str(row) + " and col " + str(col))
                 tmp_space = Space(row, col, self, space_width)
                 tmp_row.append(tmp_space)
             self.space_array.append(tmp_row)
-    
+
+    def get_space_list(self):
+        space_list = []
+        for tmp_row in self.space_array:
+            for tmp_space in tmp_row:
+                space_list.append(tmp_space)
+        return space_list
+            
     def print_board(self):
-        for i in range(self.board_size):
-            print(self.space_array[i])
+        for row in range(self.board_size):
+            for empty_col in range(self.board_size - row - 1):
+                sys.stdout.write("       ")
+            print(self.space_array[row])
 
     # returns true if the given row, col are on the edge of the board
     def is_an_edge(self, row, col):
@@ -79,29 +103,40 @@ class Board(object):
     def get_space_above(self, row, col):
         if not self.in_bounds(row, col):
             return None
-        if (row - 1 >= 0) and (col - 1 >= 0):
-            return self.space_array(row - 1, col - 1)
-        return None
+        if self.space_array[row][col].orientation == "up":
+            return None
+        if not self.in_bounds(row - 1, col - 1):
+            return None
+        return self.space_array[row - 1][col - 1]
+    
+    # returns the space below, otherwise returns None
+    def get_space_below(self, row, col):
+        if not self.in_bounds(row, col):
+            return None
+        if self.space_array[row][col].orientation == "down":
+            return None
+        if not self.in_bounds(row + 1, col + 1):
+            return None
+        return self.space_array[row + 1][col + 1]
     
     # returns the space to the left, otherwise returns None
     def get_space_left(self, row, col):
         if not self.in_bounds(row, col):
             return None
-        if col >= 0:
-            return self.space_array(row, col - 1)
-        return None
+        if not self.in_bounds(row, col - 1):
+            return None
+        return self.space_array[row][col - 1]
 
     # returns the space to the right, otherwise returns None
     def get_space_right(self, row, col):
         if not self.in_bounds(row, col):
             return None
-        if col < row * 2:
-            return self.space_array(row, col + 1)
-        return None
+        if not self.in_bounds(row, col + 1):
+            return None
+        return self.space_array[row][col + 1]
     
     # returns a list of neighbors. len > 0 and len <= 3
     def get_neighbors(self, row, col):
-        neighbors = []
         tmp = self.get_space_above(row, col)
         if tmp != None:
             neighbors.append(tmp)
@@ -109,6 +144,9 @@ class Board(object):
         if tmp != None:
             neighbors.append(tmp)
         tmp = self.get_space_right(row, col)
+        if tmp != None:
+            neighbors.append(tmp)
+        tmp = self.get_space_below(row, col)
         if tmp != None:
             neighbors.append(tmp)
         return neighbors
