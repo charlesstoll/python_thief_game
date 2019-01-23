@@ -39,20 +39,61 @@ class Space(object):
     def get_below_neighbor(self):
         return self.board.get_space_below(self.row, self.col)
 
-class Thief(object):
-    def __init__(self, location, board):
-        self.location = location
+class Piece(object):
+    def __init__(self, row, col, board):
+        self.row = row
+        self.col = col
         self.board = board
+        self.on_board = False
 
-class Policeman(object):
-    def __init__(self, location, board):
-        self.location = location
-        self.board = board
+    def place(self, row, col):
+        if not self.board.is_occupied(row, col):
+            self.row = row
+            self.col = col
+            self.on_board = True
+        else:
+            self.row = -1
+            self.col = -1
+            self.on_board = False
+
+    # move in one direction 1 space. True/False return for success/failure
+    def move(self, direction):
+        # some sanity checks
+        if not self.on_board:
+           return False
+
+        # first, get the space we want to get to 
+        if direction == "up":
+            next_space = self.board.get_space_above(self.row, self.col)
+        elif direction == "down":
+            next_space = self.board.get_space_below(self.row, self.col)
+        elif direction == "left":
+            next_space = self.board.get_space_left(self.row, self.col)
+        elif direction == "right":
+            next_space = self.board.get_space_right(self.row, self.col)
+        else:
+            next_space = None
+
+        # now do some safety/sanity checks
+        if next_space == None:
+            return False
+        
+        # try to place and return
+        return self.place(next_space.row, next_space.col)
+
+
+class Thief(Piece):
+    def __init__(self, row, col, board):
+        Piece.__init__(self, row, col, board)
+
+class Policeman(Piece):
+    def __init__(self, row, col, board):
+        Piece.__init__(self, row, col, board)
 
 class Board(object):
     def __init__(self, board_size=4, space_width=100, num_police=2):
         
-        #create an array of spaces that we can use
+        # create an array of spaces that we can use
         if(board_size <= 0):
             board_size = 4
         self.board_size = board_size
@@ -64,6 +105,16 @@ class Board(object):
                 tmp_space = Space(row, col, self, space_width)
                 tmp_row.append(tmp_space)
             self.space_array.append(tmp_row)
+        
+        # now create some pieces and remember them in useful groupings
+        self.all_pieces = []
+        self.policemen = []
+        for tmp in range(num_police):
+            tmp = Policeman(self.board_size-1, tmp, self)
+            self.policemen.append(tmp)
+            self.all_pieces.append(tmp)
+        self.thief = Thief(0,0, self)
+        self.all_pieces.append(self.thief)
 
     def get_space_list(self):
         space_list = []
@@ -77,7 +128,8 @@ class Board(object):
             for empty_col in range(self.board_size - row - 1):
                 sys.stdout.write("       ")
             print(self.space_array[row])
-
+        # TODO: add printing of thieves and police
+        
     # returns true if the given row, col are on the edge of the board
     def is_an_edge(self, row, col):
         #left edge of triangle
@@ -98,6 +150,12 @@ class Board(object):
         if col < 0 or col > row * 2:
             return False
         return True
+
+    # returns the space at row, col
+    def get_space(self, row, col):
+        if in_bounds(row, col):
+            return self.space_array[row][col]
+        return None
 
     # returns the space above, otherwise returns None
     def get_space_above(self, row, col):
@@ -150,3 +208,14 @@ class Board(object):
         if tmp != None:
             neighbors.append(tmp)
         return neighbors
+
+    # find out if there is already something in a space
+    def is_occupied(self, row, col):
+        if not in_bounds(self, row, col):
+            # not great to say that it is occupied since it is not a space
+            # but whatever... if it is an issue we can fix it them
+            return True
+        for piece in all_pieces:
+            if piece.row == row and piece.col == col:
+                return True
+        return False
