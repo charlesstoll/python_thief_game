@@ -66,16 +66,18 @@ class Piece(object):
             self.row = row
             self.col = col
             self.on_board = True
+            return True
         else:
             self.row = -1
             self.col = -1
             self.on_board = False
+            return False
 
     # move in one direction 1 space. True/False return for success/failure
     def move(self, direction):
         # some sanity checks
         if not self.on_board:
-           return False
+            return False
 
         # first, get the space we want to get to 
         if direction == "up":
@@ -118,12 +120,12 @@ class Board(object):
         # create an array of spaces that we can use
         if(board_size <= 0):
             board_size = 4
+        self.game_over = 0
         self.board_size = board_size
         self.space_array = []
         for row in range(board_size):
             tmp_row = []
             for col in range(row*2 + 1):
-                print("adding row " + str(row) + " and col " + str(col))
                 tmp_space = Space(row, col, self, space_width)
                 tmp_row.append(tmp_space)
             self.space_array.append(tmp_row)
@@ -151,9 +153,6 @@ class Board(object):
                 sys.stdout.write("        ")
             print(self.space_array[row])
         
-        for piece in self.all_pieces:
-            print(piece)
-
     # returns true if the given row, col are on the edge of the board
     def is_an_edge(self, row, col):
         #left edge of triangle
@@ -217,6 +216,17 @@ class Board(object):
             return None
         return self.space_array[row][col + 1]
     
+    def get_space_direction(self, row, col, direction):
+        if direction == "down":
+            return self.get_space_below(row, col)
+        if direction == "up":
+            return self.get_space_above(row, col)
+        if direction == "left":
+            return self.get_space_left(row, col)
+        if direction == "right":
+            return self.get_space_right(row, col)
+        return None
+
     # returns a list of neighbors. len > 0 and len <= 3
     def get_neighbors(self, row, col):
         tmp = self.get_space_above(row, col)
@@ -252,3 +262,23 @@ class Board(object):
             if piece.row == row and piece.col == col:
                 return piece
         return None
+
+    def move_piece(self, piece_name, move):
+        if(piece_name == "p1"):
+            if self.policemen[0].move(move):
+                return True
+            space = self.get_space_direction(self.policemen[0].row, self.policemen[0].col, move)
+            piece = self.get_piece_at_location(space.row, space.col)
+            if type(piece) == Thief:
+                self.game_over = 1
+                return True
+        if(piece_name == "p2"):
+            if self.policemen[1].move(move):
+                return True
+            space = self.get_space_direction(self.policemen[1].row, self.policemen[1].col, move)
+            piece = self.get_piece_at_location(space.row, space.col)
+            if type(piece) == Thief:
+                self.game_over = 1
+                return True
+        if(piece_name == "t"):
+            return self.thief.move(move)
