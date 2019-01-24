@@ -267,18 +267,35 @@ class Board(object):
         if(piece_name == "p1"):
             if self.policemen[0].move(move):
                 return True
+            # check if we couldn't move because of the thief
             space = self.get_space_direction(self.policemen[0].row, self.policemen[0].col, move)
+            # we couldn't move because of no space
+            if space == None:
+                return False
+            # we either hit a policeman or a thief so find out
             piece = self.get_piece_at_location(space.row, space.col)
+            # if we hit a thief, the game is over and we can say that the turn was a success
             if type(piece) == Thief:
                 self.game_over = 1
                 return True
+            # how did we get here???
+            return False
+
         if(piece_name == "p2"):
             if self.policemen[1].move(move):
                 return True
+            # check if we couldn't move because of the thief
             space = self.get_space_direction(self.policemen[1].row, self.policemen[1].col, move)
+            # we couldn't move because of no space
+            if space == None:
+                return False
+            # we either hit a policeman or a thief so find out
             piece = self.get_piece_at_location(space.row, space.col)
+            # if we hit a thief, the game is over and we can say that the turn was a success
             if type(piece) == Thief:
                 self.game_over = 1
                 return True
+            # how did we get here???
+            return False
         if(piece_name == "t"):
             return self.thief.move(move)
