@@ -44,11 +44,21 @@ class Space(object):
     def get_below_neighbor(self):
         return self.board.get_space_below(self.row, self.col)
 
+N = 0
+E = 90
+S = 180
+W = 270
+NE = 60
+SE = 120
+SW = 240
+NW = 300
+
 class Piece(object):
     def __init__(self, row, col, board):
         self.row = row
         self.col = col
         self.board = board
+        self.direction = N #0 refers to pointing north
         if board.in_bounds(row, col):
             self.on_board = True
         else:
@@ -60,6 +70,9 @@ class Piece(object):
         else:
             return "Not on board"
 
+    def turn(self, new_direction):
+        print("moving to face direction: " + str(new_direction))
+        self.direction = new_direction
 
     def place(self, row, col):
         if not self.board.is_occupied(row, col):
@@ -97,6 +110,24 @@ class Piece(object):
             return False
         
         # try to place and return
+        # NOTE: if the space we are moving into is oriented "up," then we 
+        # are on a space that is oriented "down" so everything here looks a
+        # little backwards but it is not
+        if(next_space.orientation == "up"):
+            if(direction == "up"):
+                self.turn(N)
+            if(direction == "left"):
+                self.turn(SW)
+            if(direction == "right"):
+                self.turn(SE)
+        if(next_space.orientation == "down"):
+            if(direction == "down"):
+                self.turn(S)
+            if(direction == "left"):
+                self.turn(NW)
+            if(direction == "right"):
+                self.turn(NE)
+ 
         return self.place(next_space.row, next_space.col)
 
 
