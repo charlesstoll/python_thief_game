@@ -20,6 +20,7 @@ while True:
             print('received {!r}'.format(data))
             if data:
                 turn_amount = int(data.split()[0])
+                #robot moving logic will go
                 current_dir = current_dir + turn_amount
                 print("current direction: " + str(current_dir))
                 data = b'ack'

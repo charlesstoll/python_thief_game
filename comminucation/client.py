@@ -23,6 +23,6 @@ def send(ip_address, turn_amount):
         print('closing socket')
         sock.close()
 
-send('127.0.0.1', 60)
-send('127.0.0.1', 40)
-send('127.0.0.1', 120)
+#send('127.0.0.1', 60)
+#send('127.0.0.1', 40)
+#send('127.0.0.1', 120)
