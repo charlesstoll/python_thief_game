@@ -108,10 +108,16 @@ def send_motion_command(client_command, motion_command_dict):
             if multiplier_present:
                 # Send the command X times
                 for x in range(0, command_multiplier + 1):
-                    motion_script.communicate(input=command.encode()) 
+                    try:
+                        motion_script.communicate(input=command.encode(), timeout=1) 
+                    except:
+                        pass
                 multiplier_present = False
             else:
-                motion_script.communicate(input=command.encode()) 
+                try:
+                    motion_script.communicate(input=command.encode(), timeout=1) 
+                except:
+                    pass
 
 
 if __name__ == "__main__":
