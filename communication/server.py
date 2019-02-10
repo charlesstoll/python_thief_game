@@ -13,10 +13,8 @@ import subprocess
 
 # Declare the sub process script as a global, then start the script
 global motion_script
-motion_script = subprocess.Popen('python motion_script.py',
-                                stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE)
+motion_script = subprocess.Popen(['python', 'motion_script.py'],
+                                stdin=subprocess.PIPE)
 
 def main():
     # Check if python3
@@ -81,21 +79,21 @@ def move_robot(command):
     if robot_type == 'hexapod':
         send_motion_command(command, hexapod_motions)
     elif robot_type == 'vikingbot0':
-        send_motion_command(command, vikingbot0_motion)
+        send_motion_command(command, vikingbot0_motions)
     elif robot_type == 'vikingbot1':
-        send_motion_command(command, vikingbot1_motion)
+        send_motion_command(command, vikingbot0_motions)
     else:
         print("No valid robot type specified. Read \"{}\", which is not a valid robot.".format(robot_type))
         sys.exit(1)
 
 
-def send_motion_command(command, motion_command_dict):
+def send_motion_command(client_command, motion_command_dict):
     """
     Process the motion command from the user and send the command sequence to the
     robot motion script.
     """
     # This line will give us a list of strings
-    command_sequence = motion_command_dict[command]
+    command_sequence = motion_command_dict[client_command]
     # Some commands are sent over and over again. Keep track of this here
     command_multiplier = 0
     multiplier_present = False
@@ -110,10 +108,10 @@ def send_motion_command(command, motion_command_dict):
             if multiplier_present:
                 # Send the command X times
                 for x in range(0, command_multiplier + 1):
-                    out, err = motion_script.communicate(input=command) 
+                    motion_script.communicate(input=command.encode()) 
                 multiplier_present = False
             else:
-                out, err = motion_script.communicate(input=command) 
+                motion_script.communicate(input=command.encode()) 
 
 
 if __name__ == "__main__":
