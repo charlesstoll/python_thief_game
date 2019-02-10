@@ -1,33 +1,47 @@
+"""
+Script to receive commands to the Raspberry Pi using a socket server
+
+Author: Charles Stoll, Patrick Gmerek
+ECE 579
+"""
+
 import socket
 import sys
 import re
 
-sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+# Check if python3
+if sys.version_info < (3, 0):
+    print ("This script requires Python 3. Try executing the following:")
+    print ("sudo python3 server.py")
+    sys.exit(1)
 
-server_address = ('localhost', 12345)
-sock.bind(server_address)
+host = '127.0.0.1'
+port = 65432
 
-sock.listen()
-current_dir = 0
-while True:
-    print('waiting for connection')
-    connection, client_address = sock.accept()
-    try :
-        print('connection from', client_address)
+with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+    s.bind((host, port))
+    s.listen()
 
+    # In degrees, with the 0 degress pointing straight up
+    current_direction = 0 
+    print('Waiting for connection...')
+    connection, client_address = s.accept()
+
+    with connection:
+        print('Connection from ', client_address)
         while True:
             data = connection.recv(20).decode('ascii')
             print('received {!r}'.format(data))
             if data:
                 turn_amount = int(data.split()[0])
                 #robot moving logic will go
-                current_dir = current_dir + turn_amount
-                print("current direction: " + str(current_dir))
+
+                current_direction = current_direction + turn_amount
+                print("current direction: " + str(current_direction))
+                # Send acknowledge signal back to client
                 data = b'ack'
                 connection.sendall(data)
             else:
                 print('no data from', client_address)
                 break
 
-    finally:
-        connection.close()
