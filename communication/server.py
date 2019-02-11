@@ -4,13 +4,25 @@ Script to receive commands to the Raspberry Pi using a socket server
 Author: Charles Stoll, Patrick Gmerek
 ECE 579
 """
+import sys
 
 import socket
-import sys
 import os
 import re
 import subprocess
-from motion_script import *
+
+# Store the model of the robot this script is running on
+global robot_type
+robot_type = determine_robot_model()
+
+# Import the functions needed for the appropriate robots
+if robot_type == "hexapod":
+    sys.path.append("../../Lynxmotion_Hexapod/testing/")
+    from interactive_control import *
+    # Setup the globals needed for the hexpod
+    setup()
+else
+    from motion_script import *
 
 
 def main():
@@ -68,20 +80,12 @@ def move_robot(command):
                           'right_down' : ['5', 'a', '5', 'w', '5', 'a', 'w'],
                           'down'       : ['9', 'a', '6', 'w']}
 
-    # Check what kind of robot this script is running on
-    robot_type = ''
-    with open ('robot_type.txt', 'r') as f:
-        robot_type = (f.readline()).rstrip('\n')
-
-    if robot_type == 'hexapod':
+    if global robot_type == 'hexapod':
         send_motion_command(command, hexapod_motions)
-    elif robot_type == 'vikingbot0':
-        send_motion_command(command, vikingbot0_motions)
-    elif robot_type == 'vikingbot1':
-        send_motion_command(command, vikingbot0_motions)
-    else:
-        print("No valid robot type specified. Read \"{}\", which is not a valid robot.".format(robot_type))
-        sys.exit(1)
+    elif global robot_type == 'vikingbot0':
+        send_motion_command(command, vikingbot0_motions) 
+    elif global robot_type == 'vikingbot1':
+        send_motion_command(command, vikingbot0_motions) 
 
 
 def send_motion_command(client_command, motion_command_dict):
@@ -104,10 +108,29 @@ def send_motion_command(client_command, motion_command_dict):
             if multiplier_present:
                 # Send the command X times
                 for x in range(0, command_multiplier + 1):
-                    motion_command(command)
+                    command_arbiter(command)
                 multiplier_present = False
             else:
-                motion_command(command)
+                command_arbiter(command)
+
+
+def determine_robot_model():
+    # Check what kind of robot this script is running on
+    robot_type = ''
+    with open ('robot_type.txt', 'r') as f:
+        robot_type = (f.readline()).rstrip('\n')
+
+    if robot_type == 'hexapod':
+        pass
+    elif robot_type == 'vikingbot0':
+        pass
+    elif robot_type == 'vikingbot1':
+        pass
+    else:
+        print("No valid robot type specified. Read \"{}\", which is not a valid robot.".format(robot_type))
+        sys.exit(1)
+
+    return robot_type
 
 
 if __name__ == "__main__":
