@@ -10,11 +10,8 @@ import sys
 import os
 import re
 import subprocess
+from motion_script import *
 
-# Declare the sub process script as a global, then start the script
-global motion_script
-motion_script = subprocess.Popen(['python', 'motion_script.py'],
-                                stdin=subprocess.PIPE)
 
 def main():
     # Check if python3
@@ -103,21 +100,14 @@ def send_motion_command(client_command, motion_command_dict):
         if command.isdigit():
             command_multiplier = int(command)
             multiplier_present = True
-            print("Detected digit {0} from string \"{1}\"".format(command_multiplier, command))
         else:
             if multiplier_present:
                 # Send the command X times
                 for x in range(0, command_multiplier + 1):
-                    try:
-                        motion_script.communicate(input=command.encode(), timeout=1) 
-                    except:
-                        pass
+                    motion_command(command)
                 multiplier_present = False
             else:
-                try:
-                    motion_script.communicate(input=command.encode(), timeout=1) 
-                except:
-                    pass
+                motion_command(command)
 
 
 if __name__ == "__main__":
