@@ -75,9 +75,24 @@ class Piece(object):
 
     def turn(self, new_direction):
         print("moving to face direction: " + str(new_direction))
-        turn_amount = new_direction - self.direction
-        turn_amount = (turn_amount + 180) % 360 - 180
-        client.send(self.ip_address, turn_amount)
+#        turn_amount = new_direction - self.direction
+#        turn_amount = (turn_amount + 180) % 360 - 180
+        command = 'none'
+        if(new_direction == N):
+            command = 'up'
+        elif(new_direction == NE):
+            command = 'right_up'
+        elif(new_direction == SE):
+            command = 'right_down'
+        elif(new_direction == S):
+            command = 'down'
+        elif(new_direction == SW):
+            command = 'left_down'
+        elif(new_direction == NW):
+            command = 'left_up'
+        else:
+            return
+        client.send(self.ip_address, command)
         self.direction = new_direction
 
     def place(self, row, col):

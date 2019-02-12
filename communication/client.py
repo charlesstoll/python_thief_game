@@ -10,15 +10,16 @@ import sys
 import re
 from time import sleep
 
+testing = 0
 
-def send(ip_address, turn_amount):
+def send(ip_address, move_direction):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     server_address = (ip_address, 65432)
     print('Connection to {} port {}'.format(*server_address))
     sock.connect(server_address)
 
-    message = str(turn_amount).encode('ascii')
+    message = move_direction.encode('ascii')
     print('Sending \"{}\"'.format(message))
     sock.sendall(message)
 
@@ -26,15 +27,15 @@ def send(ip_address, turn_amount):
     print('Received: \"{}\"'.format(data))
     sock.close()
 
-
-send('127.0.0.1', 'up')
-sleep(2)
-send('127.0.0.1', 'down')
-sleep(2)
-send('127.0.0.1', 'left_down')
-sleep(2)
-send('127.0.0.1', 'left_up')
-sleep(2)
-send('127.0.0.1', 'right_down')
-sleep(2)
-send('127.0.0.1', 'right_up')
+if(testing == 1):
+    send('127.0.0.1', 'up')
+    sleep(2)
+    send('127.0.0.1', 'down')
+    sleep(2)
+    send('127.0.0.1', 'left_down')
+    sleep(2)
+    send('127.0.0.1', 'left_up')
+    sleep(2)
+    send('127.0.0.1', 'right_down')
+    sleep(2)
+    send('127.0.0.1', 'right_up')
