@@ -11,53 +11,34 @@ import os
 import re
 import subprocess
 
-# Store the model of the robot this script is running on
 global robot_type
-robot_type = determine_robot_model()
-
-# Import the functions needed for the appropriate robots
-if robot_type == "hexapod":
-    sys.path.append("../../Lynxmotion_Hexapod/testing/")
-    from interactive_control import *
-    # Setup the globals needed for the hexpod
-    setup()
-else
-    from motion_script import *
-
 
 def main():
-    # Check if python3
-    if sys.version_info < (3, 0):
-        print ("This script requires Python 3. Try executing the following:")
-        print ("sudo python3 server.py")
-        sys.exit(1)
-
     host = '127.0.0.1'
     port = 65432
 
-    with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-        s.bind((host, port))
-        s.listen()
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.bind((host, port))
+    s.listen(5)
 
-        # In degrees, with the 0 degress pointing straight up
-        client_input = '' 
-        print('Waiting for connection...')
+    # In degrees, with the 0 degress pointing straight up
+    client_input = '' 
+    print('Waiting for connection...')
 
-        while True:
-            connection, client_address = s.accept()
-            with connection:
-                print('Connection from ', client_address)
-                client_input = connection.recv(20).decode('ascii')
-                print('Received {}'.format(client_input))
-                if client_input:
-                    move_robot(client_input)
+    while True:
+        connection, client_address = s.accept()
+        print('Connection from ', client_address)
+        client_input = connection.recv(20).decode('ascii')
+        print('Received {}'.format(client_input))
+        if client_input:
+            move_robot(client_input)
 
-                    # Send acknowledge signal back to client
-                    data = b'ack'
-                    connection.sendall(data)
-                    client_input = ''
-                else:
-                    print('no data from', client_address)
+            # Send acknowledge signal back to client
+            data = b'ack'
+            connection.sendall(data)
+            client_input = ''
+        else:
+            print('no data from', client_address)
 
 
 
@@ -66,6 +47,7 @@ def move_robot(command):
     Looks in the current working directory for a text file with the type of robot
     that this script is running on.
     """
+    global robot_type
     hexapod_motions = {'up'         : ['9', 'wd', 'w'],
                        'left_up'    : ['9',  'w', 'sd'],
                        'left_down'  : ['7', 'wa', 'w', 'd'],
@@ -80,11 +62,12 @@ def move_robot(command):
                           'right_down' : ['5', 'a', '5', 'w', '5', 'a', 'w'],
                           'down'       : ['9', 'a', '6', 'w']}
 
-    if global robot_type == 'hexapod':
+    print ("Robot type is " + robot_type)
+    if robot_type == 'hexapod':
         send_motion_command(command, hexapod_motions)
-    elif global robot_type == 'vikingbot0':
+    elif robot_type == 'vikingbot0':
         send_motion_command(command, vikingbot0_motions) 
-    elif global robot_type == 'vikingbot1':
+    elif robot_type == 'vikingbot1':
         send_motion_command(command, vikingbot0_motions) 
 
 
@@ -108,9 +91,11 @@ def send_motion_command(client_command, motion_command_dict):
             if multiplier_present:
                 # Send the command X times
                 for x in range(0, command_multiplier + 1):
+                    print("Sending {}".format(command))
                     command_arbiter(command)
                 multiplier_present = False
             else:
+                print("Sending {}".format(command))
                 command_arbiter(command)
 
 
@@ -134,5 +119,18 @@ def determine_robot_model():
 
 
 if __name__ == "__main__":
+    # Store the model of the robot this script is running on
+    global robot_type
+    robot_type = determine_robot_model()
+
+    # Import the functions needed for the appropriate robots
+    if robot_type == "hexapod":
+        sys.path.append("../../Lynxmotion_Hexapod/testing/")
+        from interactive_control import *
+        # Setup the globals needed for the hexpod
+        setup()
+    else:
+        from pwm_motion import *
+
     main()
 
