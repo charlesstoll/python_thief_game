@@ -43,12 +43,12 @@ def setup():
     GPIO.output(L298N_IN3, GPIO.LOW)
     GPIO.output(L298N_IN4, GPIO.LOW)
     # Set duty cycle to 100%
-    pwm_a = GPIO.PWM(L298N_ENA, 1000)
-    pwm_b = GPIO.PWM(L298N_ENB, 1000)
+    pwm_a = GPIO.PWM(L298N_ENA, 500)
+    pwm_b = GPIO.PWM(L298N_ENB, 500)
 
     # Initial pwms
-    pwm_a.start(100)
-    pwm_b.start(100)
+    pwm_a.start(50)
+    pwm_b.start(50)
 
 
 def RobotFWD(time):

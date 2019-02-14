@@ -61,6 +61,12 @@ def move_robot(command):
                           'right_up'   : ['0.3', 's', '0.4', 'w', '0.6', 'a'],
                           'right_down' : ['0.5', 'a', '0.5', 'w', '0.5', 'a'],
                           'down'       : ['0.9', 'a', '0.6', 'w']}
+    vikingbot1_motions = {'up'          : ['1.35', 'a', '1.5', 'w'],
+                          'left_up'     : ['0.68', 'a', '1.3', 'w', '0.74', 'a', '0.4', 's'],
+                          'left_down'   : ['0.8', 'd', '1.1', 'w', '0.8', 'd', '0.6', 's'],
+                          'right_up'    : ['0.7', 'd', '1.1', 'w', '0.7', 'd', '0.2', 's'],
+                          'right_down'  : ['0.7', 'a', '1.1', 'w', '0.7', 'a', '0.5', 's'], 
+                          'down'        : ['1.35', 'a', '1.35', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
@@ -68,7 +74,7 @@ def move_robot(command):
     elif robot_type == 'vikingbot0':
         send_motion_command(command, vikingbot0_motions) 
     elif robot_type == 'vikingbot1':
-        send_motion_command(command, vikingbot0_motions) 
+        send_motion_command(command, vikingbot1_motions) 
 
 
 def send_motion_command(client_command, motion_command_dict):
