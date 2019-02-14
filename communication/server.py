@@ -14,7 +14,7 @@ import subprocess
 global robot_type
 
 def main():
-    host = '127.0.0.1'
+    host = ''
     port = 65432
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

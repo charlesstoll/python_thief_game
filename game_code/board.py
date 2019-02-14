@@ -1,5 +1,5 @@
 import sys
-sys.path.append("../comminucation/")
+sys.path.append("../communication/")
 import client
 
 class Space(object):
