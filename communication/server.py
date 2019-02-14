@@ -14,7 +14,7 @@ import subprocess
 global robot_type
 
 def main():
-    host = '127.0.0.1'
+    host = ''
     port = 65432
 
     s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -137,6 +137,6 @@ if __name__ == "__main__":
     except KeyboardInterrupt:
         print("Received keyboard interrupt!")
         if robot_type == 'vikingbot0':
-            gpio.cleanup()
+            GPIO.cleanup()
         sys.exit()
 
