@@ -131,12 +131,13 @@ if __name__ == "__main__":
         setup()
     else:
         from pwm_motion import *
+        setup()
 
     try:
         main()
     except KeyboardInterrupt:
         print("Received keyboard interrupt!")
         if robot_type == 'vikingbot0':
-            gpio.cleanup()
+            GPIO.cleanup()
         sys.exit()
 
