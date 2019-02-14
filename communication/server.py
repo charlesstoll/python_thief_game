@@ -55,12 +55,12 @@ def move_robot(command):
                        'right_down' : [''],
                        'down'       : ['10', 'sa', '2', 'a', 'w']}
 
-    vikingbot0_motions = {'up'         : ['9', 'a', '6', 'w'],
-                          'left_up'    : ['3', 'a', '5', 'w', '5', 'a', 'w'],
-                          'left_down'  : ['3', 'a', '4', 'w', '6', 'd'],
-                          'right_up'   : ['3', 's', '4', 'w', '6', 'a', 'w', 'a'],
-                          'right_down' : ['5', 'a', '5', 'w', '5', 'a', 'w'],
-                          'down'       : ['9', 'a', '6', 'w']}
+    vikingbot0_motions = {'up'         : ['1.5', 'a', '2', 'w'],
+                          'left_up'    : ['0.3', 'a', '0.5', 'w', '0.5', 'a' ],
+                          'left_down'  : ['0.3', 'a', '0.4', 'w', '0.6', 'd'],
+                          'right_up'   : ['0.3', 's', '0.4', 'w', '0.6', 'a'],
+                          'right_down' : ['0.5', 'a', '0.5', 'w', '0.5', 'a'],
+                          'down'       : ['0.9', 'a', '0.6', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
@@ -76,28 +76,37 @@ def send_motion_command(client_command, motion_command_dict):
     Process the motion command from the user and send the command sequence to the
     robot motion script.
     """
+    global robot_type
     # This line will give us a list of strings
     command_sequence = motion_command_dict[client_command]
     # Some commands are sent over and over again. Keep track of this here
     command_multiplier = 0
     multiplier_present = False
+    command_duration = 0
 
     for command in command_sequence:
-        # Check if we have a multiplier
-        if command.isdigit():
-            command_multiplier = int(command)
-            multiplier_present = True
-        else:
-            if multiplier_present:
-                # Send the command X times
-                for x in range(0, command_multiplier + 1):
+        if robot_type is 'hexapod':
+            # Check if we have a multiplier
+            if command.isdigit():
+                if robot_type is 'hexapod':
+                    command_multiplier = int(command)
+                    multiplier_present = True
+            else:
+                if multiplier_present:
+                    # Send the command X times
+                    for x in range(0, command_multiplier + 1):
+                        print("Sending {}".format(command))
+                        command_arbiter(command)
+                    multiplier_present = False
+                else:
                     print("Sending {}".format(command))
                     command_arbiter(command)
-                multiplier_present = False
-            else:
-                print("Sending {}".format(command))
-                command_arbiter(command)
 
+        else:
+            try:
+                command_duration = float(command)
+            except ValueError:
+                command_arbiter(command, command_duration)
 
 def determine_robot_model():
     # Check what kind of robot this script is running on

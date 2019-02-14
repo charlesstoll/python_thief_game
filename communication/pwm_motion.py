@@ -51,7 +51,7 @@ def setup():
     pwm_b.start(100)
 
 
-def RobotFWD():
+def RobotFWD(time):
     print("got to fwd")
     global L298N_IN1
     global L298N_IN2
@@ -64,12 +64,12 @@ def RobotFWD():
     GPIO.output(L298N_IN2, GPIO.LOW)
     GPIO.output(L298N_IN3, GPIO.HIGH)
     GPIO.output(L298N_IN4, GPIO.LOW)
-    sleep(.5)
+    sleep(time)
     RobotSTOP()
     print("got to end of fwd")
 
 
-def RobotRIGHT():
+def RobotRIGHT(time):
     global L298N_IN1
     global L298N_IN2
     global L298N_IN3
@@ -82,12 +82,11 @@ def RobotRIGHT():
     GPIO.output(L298N_IN2, GPIO.HIGH)
     GPIO.output(L298N_IN3, GPIO.HIGH)
     GPIO.output(L298N_IN4, GPIO.LOW)
-    sleep(.2)
+    sleep(time)
     RobotSTOP()
 
 
-def RobotLEFT():
-    print("test L")
+def RobotLEFT(time):
     global L298N_IN1
     global L298N_IN2
     global L298N_IN3
@@ -100,11 +99,11 @@ def RobotLEFT():
     GPIO.output(L298N_IN2, GPIO.LOW)
     GPIO.output(L298N_IN3, GPIO.LOW)
     GPIO.output(L298N_IN4, GPIO.HIGH)
-    sleep(.2)
+    sleep(time)
     RobotSTOP()
 
 
-def RobotBACK():
+def RobotBACK(time):
     global L298N_IN1
     global L298N_IN2
     global L298N_IN3
@@ -116,7 +115,7 @@ def RobotBACK():
     GPIO.output(L298N_IN2, GPIO.HIGH)
     GPIO.output(L298N_IN3, GPIO.LOW)
     GPIO.output(L298N_IN4, GPIO.HIGH)
-    sleep(.5)
+    sleep(time)
     RobotSTOP()
 
 
@@ -134,15 +133,15 @@ def RobotSTOP():
     GPIO.output(L298N_IN4, GPIO.LOW)
 
 
-def command_arbiter(command):
+def command_arbiter(command, time):
     if command is 'w':
-        RobotFWD()
+        RobotFWD(time)
     elif command is 'a':
-        RobotLEFT()
+        RobotLEFT(time)
     elif command is 'd':
-        RobotRIGHT()
+        RobotRIGHT(time)
     elif command is 's':
-        RobotBACK()
+        RobotBACK(time)
     else:
         return -1
 
