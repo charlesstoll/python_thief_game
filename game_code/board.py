@@ -1,6 +1,17 @@
 import sys
 sys.path.append("../communication/")
 import client
+# used for ai and copying the game state
+import copy
+
+debug = 1
+
+# search_styles : depth_first breadth_first test
+search_style = "depth_first"
+# ai_function : cooperative greedy
+ai_function = "cooperative"
+
+state_list = []
 
 class Space(object):
     def __init__(self, row, col, board, space_width=100):
@@ -74,7 +85,6 @@ class Piece(object):
             return "Not on board"
 
     def turn(self, new_direction):
-        print("moving to face direction: " + str(new_direction))
 #        turn_amount = new_direction - self.direction
 #        turn_amount = (turn_amount + 180) % 360 - 180
         command = 'none'
@@ -92,7 +102,8 @@ class Piece(object):
             command = 'left_up'
         else:
             return
-        client.send(self.ip_address, command)
+        if(debug == 0):
+            client.send(self.ip_address, command)
         self.direction = new_direction
 
     def place(self, row, col):
@@ -178,6 +189,9 @@ class Board(object):
         self.game_over = 0
         self.board_size = board_size
         self.space_array = []
+        self.char_order = ['t','p1','p2']
+        self.next_to_move = 0
+        self.last_move = 'none'
         for row in range(board_size):
             tmp_row = []
             for col in range(row*2 + 1):
@@ -194,6 +208,9 @@ class Board(object):
             self.all_pieces.append(tmp)
         self.thief = Thief(0,0, self, ip_addr_t)
         self.all_pieces.append(self.thief)
+
+    def increment_turn(self):
+        self.next_to_move = (self.next_to_move + 1) % 3
 
     def get_space_list(self):
         space_list = []
@@ -318,7 +335,22 @@ class Board(object):
                 return piece
         return None
 
+    def get_piece(self, piece_name):
+        if(piece_name == "p1"):
+            return self.policemen[0]
+
+        if(piece_name == "p2"):
+            return self.policemen[1]
+        
+        if(piece_name == "t"):
+            return self.thief
+
+    def get_current_piece(self):
+        return get_piece(self.char_order[next_to_move])
+
     def move_piece(self, piece_name, move):
+        # last move is used for the ai so that it knows which move it is currently evaluating
+        self.last_move = move
         if(piece_name == "p1"):
             if self.policemen[0].move(move):
                 return True
@@ -354,3 +386,129 @@ class Board(object):
             return False
         if(piece_name == "t"):
             return self.thief.move(move)
+
+
+# AI section is here
+    def cooperative_rating():
+
+    
+    def get_rating(self):
+        #TODO: add some stuff here to make it always use the "cooperative" when guessing what the thief will do
+        if(ai_function == "cooperative"):
+            return self.cooperative_rating()
+        if(ai_function == "greedy"):
+            return self.greedy_rating()
+
+    # this funciton just calls the correct ai movement algorithm
+    def ai_move(self, depth):
+        if(search_style == "test"):
+            self.ai_move_test(self.char_order[self.next_to_move])
+        if(search_style == "depth_first"):
+            print("doing depth_first searching")
+            self.ai_move_depth_first(depth)
+        if(search_style == "breadth_first"):
+            print("doing breadth_first searching")
+
+    def ai_move_test(self, piece_name):
+        if(self.move_piece(piece_name, 'right')):
+            print("I made a move!! I went right")
+            return
+        if(self.move_piece(piece_name, 'up')):
+            print("I made a move!! I went up")
+            return
+        if(self.move_piece(piece_name, 'left')):
+            print("I made a move!! I went left")
+            return
+        if(self.move_piece(piece_name, 'down')):
+            print("I made a move!! I went down")
+            return
+        self.move_piece(piece_name, 'stay')
+        print("I made a move!! I just stayed still")
+    
+    # define this algorithm just sets up anything that needs to be done BEFORE/AFTER recursion
+    def ai_move_depth_first(self, depth):
+        root = copy.copy(self)
+        move, rating = root.get_best_move_depth_first(depth)
+        self.move_piece(piece_name, move)
+        print("I made a move!! I went " + move)
+
+    # does the recursion
+    def get_best_move_depth_first(start_point, depth):
+        
+        # exit if we found a game over state or if we hit recursion bottom
+        rating = start_point.get_rating()
+        if(rating == 0 or depth == 0):
+            return 'none', rating
+        
+        # not exiting, so we must be recursing!!!!! so we should set that shit up...
+        # first, copy the game 4 times (we have 4 possible moves)
+        op_stay = copy.copy(start_point)
+        op_left = copy.copy(start_point)
+        op_right = copy.copy(start_point)
+        op_updown = copy.copy(start_point)
+        
+        # now, do recursion on each new state and remember the max/min values for decision making
+        maximum = -1
+        minimum = 1000
+        best_max_move = 'none'
+        best_min_move = 'none'
+
+        tmp_move = 'none'
+        tmp_score = 0
+        curr_piece = start_point.get_current_piece()
+        if(op_stay.move_piece(start_point.char_order[start_point.next_to_move], 'stay')):
+            op_stay.increment_turn()
+            tmp_move, tmp_score = op_stay.get_best_move_depth_first(depth - 1)
+            if(tmp_score <= minimum):
+                best_min_move = 'stay'
+                minimum = tmp_score
+            if(tmp_score >= maximum):
+                best_max_move = 'stay'
+                maximum = tmp_score
+ 
+        if(op_left.move_piece(start_point.char_order[start_point.next_to_move], 'left')):
+            op_left.increment_turn()
+            tmp_move, tmp_score = op_left.get_best_move_depth_first(depth - 1)
+            if(tmp_score <= minimum):
+                best_min_move = 'left'
+                minimum = tmp_score
+            if(tmp_score >= maximum):
+                best_max_move = 'left'
+                maximum = tmp_score
+        
+        if(op_right.move_piece(start_point.char_order[start_point.next_to_move], 'right')):
+            op_right.increment_turn()
+            tmp_move, tmp_score = op_right.get_best_move_depth_first(depth - 1)
+            if(tmp_score <= minimum):
+                best_min_move = 'right'
+                minimum = tmp_score
+            if(tmp_score >= maximum):
+                best_max_move = 'right'
+                maximum = tmp_score
+        
+        if(start_point.get_space(curr_piece.row, curr_piece.col).orientation == 'up'):
+            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'up')):
+                op_updown.increment_turn()
+                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
+                if(tmp_score <= minimum):
+                    best_min_move = 'up'
+                    minimum = tmp_score
+                if(tmp_score >= maximum):
+                    best_max_move = 'up'
+                    maximum = tmp_score
+        else:
+            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'down')):
+                op_updown.increment_turn()
+                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
+                if(tmp_score <= minimum):
+                    best_min_move = 'down'
+                    minimum = tmp_score
+                if(tmp_score >= maximum):
+                    best_max_move = 'down'
+                    maximum = tmp_score
+
+        # now, we return the best move that we found
+        if(start_point.char_order[start_point.next_to_move] == 't'):
+            return best_max_move, maximum
+        else:
+            return best_min_move, minimum
