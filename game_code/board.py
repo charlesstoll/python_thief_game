@@ -1,4 +1,5 @@
 import sys
+import math
 sys.path.append("../communication/")
 import client
 # used for ai and copying the game state
@@ -301,6 +302,7 @@ class Board(object):
 
     # returns a list of neighbors. len > 0 and len <= 3
     def get_neighbors(self, row, col):
+        neighbors = []
         tmp = self.get_space_above(row, col)
         if tmp != None:
             neighbors.append(tmp)
@@ -314,6 +316,29 @@ class Board(object):
         if tmp != None:
             neighbors.append(tmp)
         return neighbors
+
+    # REAAAAAAAAAAALLY shitty inefficent function but our grid is small and we got gigahertz of power :D
+    def get_distance_between_spaces(self, row1, col1, row2, col2, max_dist=10):
+        distance = 0
+        if (row1 == row2) and (col1 == col2):
+            return distance
+        current_layer = []
+        next_layer = []
+        current_layer.append(self.get_space(row1, col1))
+        # just go for a bit and give up past 20
+        while(distance <= max_dist):
+            distance = distance + 1
+            # get the next row of stuffs based on current layer
+            for space in current_layer:
+                next_layer.extend(self.get_neighbors(space.row, space.col))
+            # now check all these to see if they match
+            for space in next_layer:
+                if (row2 == space.row) and (col2 == space.col):
+                    return distance
+            current_layer = next_layer
+            next_layer = []
+        print("found two spaces that were more than 10 distance apart")
+        return max_dist + 1
 
     # find out if there is already something in a space
     def is_occupied(self, row, col):
@@ -346,7 +371,7 @@ class Board(object):
             return self.thief
 
     def get_current_piece(self):
-        return get_piece(self.char_order[next_to_move])
+        return self.get_piece(self.char_order[self.next_to_move])
 
     def move_piece(self, piece_name, move):
         # last move is used for the ai so that it knows which move it is currently evaluating
@@ -389,9 +414,23 @@ class Board(object):
 
 
 # AI section is here
-    def cooperative_rating():
+    def cooperative_rating(self):
+        # get thief space
+        row_t = self.thief.row
+        col_t = self.thief.col
+        # get p1 space
+        row_p1 = self.policemen[0].row
+        col_p1 = self.policemen[0].col
+        # get p2 space
+        row_p2 = self.policemen[1].row
+        col_p2 = self.policemen[1].col
+        # get dist(p1, thief)
+        p1_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p1, col_p1, 8)
+        # get dist(p2, thief)
+        p2_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p2, col_p2, 8)
+        # return dist(p1, thief) + dist(p2, thief)
+        return math.sqrt((p1_t_dist * p1_t_dist) + (p2_t_dist * p2_t_dist))
 
-    
     def get_rating(self):
         #TODO: add some stuff here to make it always use the "cooperative" when guessing what the thief will do
         if(ai_function == "cooperative"):
@@ -429,7 +468,7 @@ class Board(object):
     def ai_move_depth_first(self, depth):
         root = copy.copy(self)
         move, rating = root.get_best_move_depth_first(depth)
-        self.move_piece(piece_name, move)
+        self.move_piece(self.char_order[self.next_to_move], move)
         print("I made a move!! I went " + move)
 
     # does the recursion
