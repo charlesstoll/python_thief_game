@@ -6,6 +6,7 @@ import client
 import copy
 
 debug = 1
+pr_debug = 0
 
 # search_styles : depth_first breadth_first test
 search_style = "depth_first"
@@ -126,7 +127,9 @@ class Piece(object):
             return False
 
         # first, get the space we want to get to 
-        if direction == "up":
+        if direction == "stay":
+            return True
+        elif direction == "up":
             next_space = self.board.get_space_above(self.row, self.col)
         elif direction == "down":
             next_space = self.board.get_space_below(self.row, self.col)
@@ -429,6 +432,11 @@ class Board(object):
         # get dist(p2, thief)
         p2_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p2, col_p2, 8)
         # return dist(p1, thief) + dist(p2, thief)
+        if(p1_t_dist == 0):
+            return 0
+        if(p2_t_dist == 0):
+            return 0
+        return p1_t_dist + p2_t_dist
         return math.sqrt((p1_t_dist * p1_t_dist) + (p2_t_dist * p2_t_dist))
 
     def get_rating(self):
@@ -469,22 +477,24 @@ class Board(object):
         root = copy.copy(self)
         move, rating = root.get_best_move_depth_first(depth)
         self.move_piece(self.char_order[self.next_to_move], move)
-        print("I made a move!! I went " + move)
+        print("I made a move!! " + self.char_order[self.next_to_move] +" went " + move)
 
     # does the recursion
     def get_best_move_depth_first(start_point, depth):
-        
+        max_depth = 9
         # exit if we found a game over state or if we hit recursion bottom
         rating = start_point.get_rating()
+        #print("my rating is: " + str(rating))
         if(rating == 0 or depth == 0):
-            return 'none', rating
+            #print("RECURSION EXIT POINT =====================================")
+            return ('none', rating)
         
         # not exiting, so we must be recursing!!!!! so we should set that shit up...
         # first, copy the game 4 times (we have 4 possible moves)
-        op_stay = copy.copy(start_point)
-        op_left = copy.copy(start_point)
-        op_right = copy.copy(start_point)
-        op_updown = copy.copy(start_point)
+        op_stay = copy.deepcopy(start_point)
+        op_left = copy.deepcopy(start_point)
+        op_right = copy.deepcopy(start_point)
+        op_updown = copy.deepcopy(start_point)
         
         # now, do recursion on each new state and remember the max/min values for decision making
         maximum = -1
@@ -495,8 +505,11 @@ class Board(object):
         tmp_move = 'none'
         tmp_score = 0
         curr_piece = start_point.get_current_piece()
+        #print("starting recursion at depth: " + str(depth) + "==================================")
         if(op_stay.move_piece(start_point.char_order[start_point.next_to_move], 'stay')):
             op_stay.increment_turn()
+            if(depth > 1 and pr_debug):
+                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes stay")
             tmp_move, tmp_score = op_stay.get_best_move_depth_first(depth - 1)
             if(tmp_score <= minimum):
                 best_min_move = 'stay'
@@ -507,6 +520,8 @@ class Board(object):
  
         if(op_left.move_piece(start_point.char_order[start_point.next_to_move], 'left')):
             op_left.increment_turn()
+            if(depth > 1 and pr_debug):
+                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes left")
             tmp_move, tmp_score = op_left.get_best_move_depth_first(depth - 1)
             if(tmp_score <= minimum):
                 best_min_move = 'left'
@@ -517,6 +532,8 @@ class Board(object):
         
         if(op_right.move_piece(start_point.char_order[start_point.next_to_move], 'right')):
             op_right.increment_turn()
+            if(depth > 1 and pr_debug):
+                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes right")
             tmp_move, tmp_score = op_right.get_best_move_depth_first(depth - 1)
             if(tmp_score <= minimum):
                 best_min_move = 'right'
@@ -524,20 +541,11 @@ class Board(object):
             if(tmp_score >= maximum):
                 best_max_move = 'right'
                 maximum = tmp_score
-        
         if(start_point.get_space(curr_piece.row, curr_piece.col).orientation == 'up'):
-            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'up')):
-                op_updown.increment_turn()
-                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
-                if(tmp_score <= minimum):
-                    best_min_move = 'up'
-                    minimum = tmp_score
-                if(tmp_score >= maximum):
-                    best_max_move = 'up'
-                    maximum = tmp_score
-        else:
             if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'down')):
                 op_updown.increment_turn()
+                if(depth > 1 and pr_debug):
+                    print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes down")
                 tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
                 if(tmp_score <= minimum):
                     best_min_move = 'down'
@@ -545,9 +553,25 @@ class Board(object):
                 if(tmp_score >= maximum):
                     best_max_move = 'down'
                     maximum = tmp_score
+        else:
+            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'up')):
+                op_updown.increment_turn()
+                if(depth > 1 and pr_debug):
+                    print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes up")
+                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
+                if(tmp_score <= minimum):
+                    best_min_move = 'up'
+                    minimum = tmp_score
+                if(tmp_score >= maximum):
+                    best_max_move = 'up'
+                    maximum = tmp_score
 
         # now, we return the best move that we found
         if(start_point.char_order[start_point.next_to_move] == 't'):
-            return best_max_move, maximum
+            if(depth > 1 and pr_debug):
+                print(((max_depth-depth) * '  ') + "figuring out the thief's move, it would go: " + best_max_move)
+            return (best_max_move, maximum)
         else:
-            return best_min_move, minimum
+            if(depth > 1 and pr_debug):
+                print(((max_depth-depth) * '  ') + "figure out " + start_point.char_order[start_point.next_to_move] + "'s turn. it would go: " + best_min_move)
+            return (best_min_move, minimum)

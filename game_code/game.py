@@ -5,6 +5,7 @@ using_ai = 0
 exit = 0
 print("Welcome to the Thief game! The only game where police try to catch bad guys!")
 while(exit != 1):
+    '''
     if(input("Would you like to start a new game? y/n  ") != "y"):
         print("Goodbye!")
         sys.exit()
@@ -31,11 +32,14 @@ while(exit != 1):
         tmp_char_order.append(input("Who goes second? t/p1/p2  "))
         tmp_char_order.append(input("Who goes third? t/p1/p2  "))
         board.char_order = tmp_char_order
+    '''
+    using_ai = 1
+    board= Board(board_size = 4)
     while(board.game_over == 0):
         board.print_board()
         if(using_ai == 1 and (not board.char_order[board.next_to_move] == "t")):
             print("THE AI IS MOVING NOW----------------------------------------------")
-            board.ai_move(board.char_order[board.next_to_move])
+            board.ai_move(6)
             board.increment_turn()
             continue
         print("What would " + board.char_order[board.next_to_move] + " like to do?")
