@@ -10,8 +10,10 @@ import socket
 import os
 import re
 import subprocess
+from mpu9250 import *
 
 global robot_type
+global imu
 
 def main():
     host = ''
@@ -130,6 +132,7 @@ def determine_robot_model():
 if __name__ == "__main__":
     # Store the model of the robot this script is running on
     global robot_type
+    global imu = mpu9250() 
     robot_type = determine_robot_model()
 
     # Import the functions needed for the appropriate robots
