@@ -10,10 +10,15 @@ import socket
 import os
 import re
 import subprocess
+import time
+from mpu9250 import *
 
 global robot_type
+global imu
+global starting_orientation
 
 def main():
+    global imu 
     host = ''
     port = 65432
 
@@ -76,13 +81,13 @@ def move_robot(command):
     elif robot_type == 'vikingbot1':
         send_motion_command(command, vikingbot1_motions) 
 
-
 def send_motion_command(client_command, motion_command_dict):
     """
     Process the motion command from the user and send the command sequence to the
     robot motion script.
     """
     global robot_type
+    global starting_orientation
     # This line will give us a list of strings
     command_sequence = motion_command_dict[client_command]
     # Some commands are sent over and over again. Keep track of this here
@@ -132,11 +137,29 @@ def determine_robot_model():
 
     return robot_type
 
+def average_orientation(seconds):
+    global imu
+    sampling_period = 0.05
+    mag_readings = [] 
+    num_readings = seconds / sampling_period
+
+    for x in range(0, num_readings):
+        m = imu.mag
+        degrees = (atan2(m[1], m[0]) * 180) / 3.14
+        mag_readings.append(degrees)
+        sleep(sampling_period)
+
+    return sum(mag_readings) / len(mag_readings)
+
 
 if __name__ == "__main__":
     # Store the model of the robot this script is running on
     global robot_type
+    global imu = mpu9250() 
+    global starting_orientation
     robot_type = determine_robot_model()
+
+    starting_orientation = average_orientation(10)
 
     # Import the functions needed for the appropriate robots
     if robot_type == "hexapod":
