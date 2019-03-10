@@ -55,12 +55,12 @@ def move_robot(command):
                        'right_down' : [''],
                        'down'       : ['10', 'sa', '2', 'a', 'w']}
 
-    vikingbot0_motions = {'up'         : ['1.5', 'a', '2', 'w'],
-                          'left_up'    : ['0.3', 'a', '0.5', 'w', '0.5', 'a' ],
-                          'left_down'  : ['0.3', 'a', '0.4', 'w', '0.6', 'd'],
-                          'right_up'   : ['0.3', 's', '0.4', 'w', '0.6', 'a'],
-                          'right_down' : ['0.5', 'a', '0.5', 'w', '0.5', 'a'],
-                          'down'       : ['0.9', 'a', '0.6', 'w']}
+    vikingbot0_motions = {'up'         : ['1.05', 'a', '2.2', 'w'],
+                          'left_up'    : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'left_down'  : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_up'   : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_down' : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'down'       : ['1.05', 'a', '2.2', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
