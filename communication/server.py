@@ -11,14 +11,11 @@ import os
 import re
 import subprocess
 import time
-from mpu9250 import *
 
 global robot_type
-global imu
 global starting_orientation
 
 def main():
-    global imu 
     host = ''
     port = 65432
 
@@ -60,18 +57,18 @@ def move_robot(command):
                        'right_down' : [''],
                        'down'       : ['10', 'sa', '2', 'a', 'w']}
 
-    vikingbot0_motions = {'up'         : ['1.5', 'a', '2', 'w'],
-                          'left_up'    : ['0.3', 'a', '0.5', 'w', '0.5', 'a' ],
-                          'left_down'  : ['0.3', 'a', '0.4', 'w', '0.6', 'd'],
-                          'right_up'   : ['0.3', 's', '0.4', 'w', '0.6', 'a'],
-                          'right_down' : ['0.5', 'a', '0.5', 'w', '0.5', 'a'],
-                          'down'       : ['0.9', 'a', '0.6', 'w']}
     vikingbot1_motions = {'up'          : ['1.35', 'a', '1.5', 'w'],
                           'left_up'     : ['0.68', 'a', '1.3', 'w', '0.74', 'a', '0.4', 's'],
                           'left_down'   : ['0.8', 'd', '1.1', 'w', '0.8', 'd', '0.6', 's'],
                           'right_up'    : ['0.7', 'd', '1.1', 'w', '0.7', 'd', '0.2', 's'],
                           'right_down'  : ['0.7', 'a', '1.1', 'w', '0.7', 'a', '0.5', 's'], 
                           'down'        : ['1.35', 'a', '1.35', 'w']}
+    vikingbot0_motions = {'up'         : ['1.05', 'a', '2.2', 'w'],
+                          'left_up'    : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'left_down'  : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_up'   : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_down' : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'down'       : ['1.05', 'a', '2.2', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
@@ -137,29 +134,12 @@ def determine_robot_model():
 
     return robot_type
 
-def average_orientation(seconds):
-    global imu
-    sampling_period = 0.05
-    mag_readings = [] 
-    num_readings = seconds / sampling_period
-
-    for x in range(0, num_readings):
-        m = imu.mag
-        degrees = (atan2(m[1], m[0]) * 180) / 3.14
-        mag_readings.append(degrees)
-        sleep(sampling_period)
-
-    return sum(mag_readings) / len(mag_readings)
-
 
 if __name__ == "__main__":
     # Store the model of the robot this script is running on
     global robot_type
-    global imu = mpu9250() 
     global starting_orientation
     robot_type = determine_robot_model()
-
-    starting_orientation = average_orientation(10)
 
     # Import the functions needed for the appropriate robots
     if robot_type == "hexapod":
