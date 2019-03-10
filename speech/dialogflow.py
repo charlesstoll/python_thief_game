@@ -1,5 +1,7 @@
 import dialogflow_v2 as dialogflow
 import os
+import boto3
+from pygame import mixer
 project_id = "gameplay-32385"
 
 
@@ -27,6 +29,13 @@ def detect_intent_audio(project_id, session_id, audio_file_path,
     response = session_client.detect_intent(
         session=session, query_input=query_input,
         input_audio=input_audio)
+    print('Query text: {}'.format(response.query_result.query_text))
+    print('Detected intent: {} (confidence: {})\n'.format(
+			response.query_result.intent.display_name,
+			response.query_result.intent_detection_confidence))
+
+    print ("Response should be: ", response.query_result.fulfillment_text, "\n")
+
 
     return response.query_result.fulfillment_text
 	
@@ -54,9 +63,30 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
         print('Detected intent: {} (confidence: {})\n'.format(
 			response.query_result.intent.display_name,
 			response.query_result.intent_detection_confidence))
-    return response.query_result.fulfillment_text
 
+        print('Response should be: ')
+        print(response.query_result.fulfillment_text)
+        print('\n')
+        speak(response.query_result.fulfillment_text)
+    return response.query_result.intent.display_name
 
+def speak (data):
+    polly = boto3.client('polly')
+    spoken_text = polly.synthesize_speech(Text = data, OutputFormat = 'mp3', VoiceId = 'Matthew')
+    with open('output.mp3', 'wb') as f:
+        f.write(spoken_text['AudioStream'].read())
+        f.close()
+# Will not work on my linux distributable
+"""
+	mixer.init()
+	mixer.music.load('output.mp3')
+	mixer.music.play()
+	
+	while mixer.music.get_busy() == True:
+		pass
+	mixer.quit()
+	os.remove('output.mp3')
+"""
 
 current_directory = os.getcwd()
 credentials = os.path.join(current_directory, 'gameplay-32385-fdc504fdecef.json')
