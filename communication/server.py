@@ -10,8 +10,10 @@ import socket
 import os
 import re
 import subprocess
+import time
 
 global robot_type
+global starting_orientation
 
 def main():
     host = ''
@@ -55,12 +57,18 @@ def move_robot(command):
                        'right_down' : [''],
                        'down'       : ['10', 'sa', '2', 'a', 'w']}
 
-    vikingbot0_motions = {'up'         : ['1.5', 'a', '2', 'w'],
-                          'left_up'    : ['0.3', 'a', '0.5', 'w', '0.5', 'a' ],
-                          'left_down'  : ['0.3', 'a', '0.4', 'w', '0.6', 'd'],
-                          'right_up'   : ['0.3', 's', '0.4', 'w', '0.6', 'a'],
-                          'right_down' : ['0.5', 'a', '0.5', 'w', '0.5', 'a'],
-                          'down'       : ['0.9', 'a', '0.6', 'w']}
+    vikingbot1_motions = {'up'          : ['1.35', 'a', '1.5', 'w'],
+                          'left_up'     : ['0.68', 'a', '1.3', 'w', '0.74', 'a', '0.4', 's'],
+                          'left_down'   : ['0.8', 'd', '1.1', 'w', '0.8', 'd', '0.6', 's'],
+                          'right_up'    : ['0.7', 'd', '1.1', 'w', '0.7', 'd', '0.2', 's'],
+                          'right_down'  : ['0.7', 'a', '1.1', 'w', '0.7', 'a', '0.5', 's'], 
+                          'down'        : ['1.35', 'a', '1.35', 'w']}
+    vikingbot0_motions = {'up'         : ['1.05', 'a', '2.2', 'w'],
+                          'left_up'    : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'left_down'  : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_up'   : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
+                          'right_down' : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
+                          'down'       : ['1.05', 'a', '2.2', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
@@ -68,8 +76,7 @@ def move_robot(command):
     elif robot_type == 'vikingbot0':
         send_motion_command(command, vikingbot0_motions) 
     elif robot_type == 'vikingbot1':
-        send_motion_command(command, vikingbot0_motions) 
-
+        send_motion_command(command, vikingbot1_motions) 
 
 def send_motion_command(client_command, motion_command_dict):
     """
@@ -77,6 +84,7 @@ def send_motion_command(client_command, motion_command_dict):
     robot motion script.
     """
     global robot_type
+    global starting_orientation
     # This line will give us a list of strings
     command_sequence = motion_command_dict[client_command]
     # Some commands are sent over and over again. Keep track of this here
@@ -130,6 +138,7 @@ def determine_robot_model():
 if __name__ == "__main__":
     # Store the model of the robot this script is running on
     global robot_type
+    global starting_orientation
     robot_type = determine_robot_model()
 
     # Import the functions needed for the appropriate robots
