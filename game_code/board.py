@@ -86,7 +86,7 @@ class Piece(object):
         else:
             return "Not on board"
 
-    def turn(self, new_direction):
+    def turn(self, new_direction, send=0):
 #        turn_amount = new_direction - self.direction
 #        turn_amount = (turn_amount + 180) % 360 - 180
         command = 'none'
@@ -104,7 +104,7 @@ class Piece(object):
             command = 'left_up'
         else:
             return
-        if(debug == 0):
+        if((debug == 0) and (send == 1)):
             client.send(self.ip_address, command)
         self.direction = new_direction
 
@@ -121,7 +121,7 @@ class Piece(object):
             return False
 
     # move in one direction 1 space. True/False return for success/failure
-    def move(self, direction):
+    def move(self, direction, send=0):
         # some sanity checks
         if not self.on_board:
             return False
@@ -151,18 +151,18 @@ class Piece(object):
         # little backwards but it is not
         if(next_space.orientation == "up"):
             if(direction == "up"):
-                self.turn(N)
+                self.turn(N, send)
             if(direction == "left"):
-                self.turn(SW)
+                self.turn(SW, send)
             if(direction == "right"):
-                self.turn(SE)
+                self.turn(SE, send)
         if(next_space.orientation == "down"):
             if(direction == "down"):
-                self.turn(S)
+                self.turn(S, send)
             if(direction == "left"):
-                self.turn(NW)
+                self.turn(NW, send)
             if(direction == "right"):
-                self.turn(NE)
+                self.turn(NE, send)
  
         return self.place(next_space.row, next_space.col)
 
@@ -376,11 +376,11 @@ class Board(object):
     def get_current_piece(self):
         return self.get_piece(self.char_order[self.next_to_move])
 
-    def move_piece(self, piece_name, move):
+    def move_piece(self, piece_name, move, send=0):
         # last move is used for the ai so that it knows which move it is currently evaluating
         self.last_move = move
         if(piece_name == "p1"):
-            if self.policemen[0].move(move):
+            if self.policemen[0].move(move, send):
                 return True
             # check if we couldn't move because of the thief
             space = self.get_space_direction(self.policemen[0].row, self.policemen[0].col, move)
@@ -397,7 +397,7 @@ class Board(object):
             return False
 
         if(piece_name == "p2"):
-            if self.policemen[1].move(move):
+            if self.policemen[1].move(move, send):
                 return True
             # check if we couldn't move because of the thief
             space = self.get_space_direction(self.policemen[1].row, self.policemen[1].col, move)
@@ -413,7 +413,7 @@ class Board(object):
             # how did we get here???
             return False
         if(piece_name == "t"):
-            return self.thief.move(move)
+            return self.thief.move(move, send)
 
 
 # AI section is here
@@ -476,7 +476,7 @@ class Board(object):
     def ai_move_depth_first(self, depth):
         root = copy.copy(self)
         move, rating = root.get_best_move_depth_first(depth)
-        self.move_piece(self.char_order[self.next_to_move], move)
+        self.move_piece(self.char_order[self.next_to_move], move, send=1)
         print("I made a move!! " + self.char_order[self.next_to_move] +" went " + move)
 
     # does the recursion
