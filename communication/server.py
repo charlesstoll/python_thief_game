@@ -44,6 +44,26 @@ def main():
             print('no data from', client_address)
 
 
+def get_orientation():
+    global starting_orientation
+
+    # Query the real heading
+    heading, roll, pitch = bno.read_euler()
+
+    # Return the difference between the current heading and the starting orientation
+    return heading - starting_orientation
+
+def correct_for_drift():
+    global starting_orientation
+
+    # Query the real heading
+    heading, roll, pitch = bno.read_euler()
+
+    print("In correct_for_drift(), we are comparing the current heading {0:0.2F} against the starting orientation {0:0.2F}".
+            format(heading, starting_orientation))
+    
+    # Arbitrary threshold is set up right now. Need to test the ripple dance cycle to find out
+    # how precisely and accurately we can rotate the hexapod
 
 def move_robot(command):
     """
@@ -73,6 +93,7 @@ def move_robot(command):
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
+        correct_for_drift()
         send_motion_command(command, hexapod_motions)
     elif robot_type == 'vikingbot0':
         send_motion_command(command, vikingbot0_motions) 
