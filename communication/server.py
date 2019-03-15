@@ -11,6 +11,7 @@ import os
 import re
 import subprocess
 import time
+from Adafruit_BNO055 import BNO055
 
 global robot_type
 global starting_orientation
@@ -140,6 +141,14 @@ if __name__ == "__main__":
     global robot_type
     global starting_orientation
     robot_type = determine_robot_model()
+
+    bno = BNO055.BNO055(serial_port='/dev/serial0', rst=18)
+    heading, roll, pitch = bno.read_euler()
+    starting_orientation = heading
+    print("Starting orientation (virtual North) is {0:0.2F}".format(starting_orientation)) 
+
+    if not bno.begin():
+        raise RuntimeError('Failed to initialize BNO055! Is the sensor connected?')
 
     # Import the functions needed for the appropriate robots
     if robot_type == "hexapod":

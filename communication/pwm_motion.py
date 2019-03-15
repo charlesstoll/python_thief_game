@@ -22,14 +22,13 @@ def setup():
     global pwm_b
 
 #switches on the H-bridge
-    L298N_IN1 = 37
-    L298N_IN2 = 35
-    L298N_IN3 = 33
-    L298N_IN4 = 31
-    L298N_ENA = 36
-    L298N_ENB = 32
-
-    GPIO.setmode(GPIO.BOARD)
+# Note that the gpio mode is BCM so these numbers do not correspond to the pin numbers on the RPi header
+    L298N_IN1 = 26
+    L298N_IN2 = 19
+    L298N_IN3 = 13
+    L298N_IN4 = 6
+    L298N_ENA = 16
+    L298N_ENB = 12
 
     #initializing GPIO pins to low outputs 
     GPIO.setup(L298N_IN1, GPIO.OUT)
