@@ -173,7 +173,8 @@ if __name__ == "__main__":
 
     # Import the functions needed for the appropriate robots
     if robot_type == "hexapod":
-        sys.path.append("../../Lynxmotion_Hexapod/testing/")
+        sys.path.append("../../Lynxmotion_Hexapod/game")
+        sys.path.append("../../Lynxmotion_Hexapod/project_files/robot_drivers")
         from interactive_control import *
         # Setup the globals needed for the hexpod
         setup()
