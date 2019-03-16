@@ -4,16 +4,16 @@ sys.path.append("../communication/")
 import client
 # used for ai and copying the game state
 import copy
+from node import *
 
 debug = 1
 pr_debug = 0
 
 # search_styles : depth_first breadth_first test
-search_style = "depth_first"
+search_style = "breadth_first"
 # ai_function : cooperative greedy
 ai_function = "cooperative"
 
-state_list = []
 
 class Space(object):
     def __init__(self, row, col, board, space_width=100):
@@ -69,7 +69,7 @@ SW = 240
 NW = 300
 
 class Piece(object):
-    def __init__(self, row, col, board, ip_address):
+    def __init__(self, row, col, board, ip_address, name):
         self.row = row
         self.col = col
         self.board = board
@@ -168,15 +168,15 @@ class Piece(object):
 
 
 class Thief(Piece):
-    def __init__(self, row, col, board, ip_address):
-        Piece.__init__(self, row, col, board, ip_address)
+    def __init__(self, row, col, board, ip_address, name):
+        Piece.__init__(self, row, col, board, ip_address, name)
 
     def __repr__(self):
         return "Thief: " + Piece.__repr__(self)
 
 class Policeman(Piece):
-    def __init__(self, row, col, board, ip_address):
-        Piece.__init__(self, row, col, board, ip_address)
+    def __init__(self, row, col, board, ip_address, name):
+        Piece.__init__(self, row, col, board, ip_address, name)
 
     def __repr__(self):
         return "Policeman: " + Piece.__repr__(self)
@@ -187,6 +187,10 @@ ip_addr_t = "127.0.0.1"
 class Board(object):
     def __init__(self, board_size=4, space_width=100, num_police=2):
         
+        # used for node-base ai. options are 'cooperative' or 'greedy'
+        self.p1_strategy = "cooperative"
+        self.p2_strategy = "cooperative"
+
         # create an array of spaces that we can use
         if(board_size <= 0):
             board_size = 4
@@ -207,10 +211,10 @@ class Board(object):
         self.all_pieces = []
         self.policemen = []
         for tmp in range(num_police):
-            tmp = Policeman(self.board_size-1, tmp, self, ip_addr_p[tmp])
+            tmp = Policeman(self.board_size-1, tmp, self, ip_addr_p[tmp], 'p' + str(tmp + 1))
             self.policemen.append(tmp)
             self.all_pieces.append(tmp)
-        self.thief = Thief(0,0, self, ip_addr_t)
+        self.thief = Thief(0,0, self, ip_addr_t, 't')
         self.all_pieces.append(self.thief)
 
     def increment_turn(self):
@@ -228,6 +232,7 @@ class Board(object):
             for empty_col in range(self.board_size - row - 1):
                 sys.stdout.write("        ")
             print(self.space_array[row])
+        print("Waiting for " + self.get_current_piece_name() + " to make a move")
         
     # returns true if the given row, col are on the edge of the board
     def is_an_edge(self, row, col):
@@ -376,10 +381,32 @@ class Board(object):
     def get_current_piece(self):
         return self.get_piece(self.char_order[self.next_to_move])
 
+    def get_current_piece_name(self):
+        return self.char_order[self.next_to_move]
+
+    def p_to_t_dist(self, p_number):
+        if p_number < 1 or p_number > 2:
+            print("ERROR: p_to_t_dist trying to find distance to nonexistant Policeman")
+        # get thief space
+        row_t = self.thief.row
+        col_t = self.thief.col
+        # get p1 space
+        row_p = self.policemen[p_number - 1].row
+        col_p = self.policemen[p_number - 1].col
+        # get dist(p, thief)
+        p_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p, col_p, 8)
+        return p_t_dist
+    
     def move_piece(self, piece_name, move, send=0):
         # last move is used for the ai so that it knows which move it is currently evaluating
         self.last_move = move
         if(piece_name == "p1"):
+        # TODO: add the logic BEFORE the move so that if the policemen is next to the thief
+        # on his turn, the game ends and doesn't need a move to get there
+        # TODO: also change the "get rating" fxns so that they will return the dist - 1 as
+        # the rating
+            if self.p_to_t_dist(1) == 1:
+                self.game_over = 1
             if self.policemen[0].move(move, send):
                 return True
             # check if we couldn't move because of the thief
@@ -397,6 +424,8 @@ class Board(object):
             return False
 
         if(piece_name == "p2"):
+            if self.p_to_t_dist(2) == 1:
+                self.game_over = 1
             if self.policemen[1].move(move, send):
                 return True
             # check if we couldn't move because of the thief
@@ -415,30 +444,40 @@ class Board(object):
         if(piece_name == "t"):
             return self.thief.move(move, send)
 
-
 # AI section is here
     def cooperative_rating(self):
+        # get dist(p1, thief)
+        p1_t_dist = self.p_to_t_dist(1) 
+        # get dist(p2, thief)
+        p2_t_dist = self.p_to_t_dist(2) 
+        # return dist(p1, thief) + dist(p2, thief)
+        return p1_t_dist + p2_t_dist
+        return math.sqrt((p1_t_dist * p1_t_dist) + (p2_t_dist * p2_t_dist)) - 1
+
+    def p1_greedy_rating(self):
         # get thief space
         row_t = self.thief.row
         col_t = self.thief.col
         # get p1 space
         row_p1 = self.policemen[0].row
         col_p1 = self.policemen[0].col
+        # get dist(p1, thief)
+        p1_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p1, col_p1, 8)
+        # return dist(p1, thief)
+        return p1_t_dist
+
+    def p2_greedy_rating(self):
+        # get thief space
+        row_t = self.thief.row
+        col_t = self.thief.col
         # get p2 space
         row_p2 = self.policemen[1].row
         col_p2 = self.policemen[1].col
-        # get dist(p1, thief)
-        p1_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p1, col_p1, 8)
         # get dist(p2, thief)
         p2_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p2, col_p2, 8)
-        # return dist(p1, thief) + dist(p2, thief)
-        if(p1_t_dist == 0):
-            return 0
-        if(p2_t_dist == 0):
-            return 0
-        return p1_t_dist + p2_t_dist
-        return math.sqrt((p1_t_dist * p1_t_dist) + (p2_t_dist * p2_t_dist))
-
+        # return dist(p2, thief)
+        return p2_t_dist
+    
     def get_rating(self):
         #TODO: add some stuff here to make it always use the "cooperative" when guessing what the thief will do
         if(ai_function == "cooperative"):
@@ -454,7 +493,12 @@ class Board(object):
             print("doing depth_first searching")
             self.ai_move_depth_first(depth)
         if(search_style == "breadth_first"):
-            print("doing breadth_first searching")
+            tree = Decision_Tree(self)
+            best_move = tree.find_depth_first(depth)
+            print("***************************************BEST MOVE IS " + best_move)
+            self.move_piece(self.char_order[self.next_to_move], best_move, send=1)
+            print("I made a move!! " + self.char_order[self.next_to_move] +" went " + best_move)
+
 
     def ai_move_test(self, piece_name):
         if(self.move_piece(piece_name, 'right')):
@@ -575,3 +619,98 @@ class Board(object):
             if(depth > 1 and pr_debug):
                 print(((max_depth-depth) * '  ') + "figure out " + start_point.char_order[start_point.next_to_move] + "'s turn. it would go: " + best_min_move)
             return (best_min_move, minimum)
+
+        # functions for node-based ai stuffs
+# state1.get_options() -> return a list of all DOABLE options for how to move from this state
+    def get_options(self):
+        curr_piece = self.get_current_piece()
+        directions = ["down", "up", "left", "right"]
+        doable_options = []
+        # we can always just stay
+        doable_options.append("stay")
+        for option in directions:
+            tmp_space = self.get_space_direction(curr_piece.row, curr_piece.col, option)
+            if tmp_space == None:
+                continue
+            if self.is_occupied(tmp_space.row, tmp_space.col):
+                continue
+            doable_options.append(option)
+        return doable_options
+
+# state1.get_node_rating() -> gets the value (goodness) of the given state
+    def get_node_rating(self):
+        # find the t rating
+        t_rating = self.cooperative_rating() 
+        # find p1's rating
+        p1_rating = 1000
+        if self.p1_strategy == "cooperative":
+            p1_rating = self.cooperative_rating()
+        elif self.p1_strategy == "greedy":
+            p1_rating = self.p1_greedy_rating()
+        else:
+            print("ERROR: bad strategy for p1")
+        # find p2's rating
+        p2_rating = 1000
+        if self.p2_strategy == "cooperative":
+            p2_rating = self.cooperative_rating()
+        elif self.p2_strategy == "greedy":
+            p2_rating = self.p2_greedy_rating()
+        else:
+            print("ERROR: bad strategy for p2")
+        # store all ratings in the list and return it
+        node_rating = []
+        node_rating.append(t_rating)
+        node_rating.append(p1_rating)
+        node_rating.append(p2_rating)
+        return node_rating
+
+# state1.get_cost(state2) -> gets the cost to move from state2 to state1
+#   # NOTE: this is not needed for our game or for node.py at the moment
+# state1.do_option(option) -> does the option move on the state
+    def do_option(self, option):
+        curr_piece = self.get_current_piece_name()
+        self.move_piece(curr_piece, option)
+        self.increment_turn()
+
+# state1.get_better_choice(r1, op1, r2, op2) -> returns the better rating, option pair
+# NOTE: the logic here is dependant on what values you are saving during the get_node_rating fxn
+    def get_better_choice(self, r1, op1, r2, op2):
+        curr_piece = self.get_current_piece_name()
+        # return max for thief
+        if curr_piece == "t":
+            if r1[0] > r2[0]:
+                return (r1, op1)
+            else:
+                return (r2, op2)
+        # return min for p1
+        if curr_piece == "p1":
+            if r1[1] < r2[1]:
+                return (r1, op1)
+            else:
+                return (r2, op2)
+        # return min for p2
+        if curr_piece == "p2":
+            if r1[2] < r2[2]:
+                return (r1, op1)
+            else:
+                return (r2, op2)
+
+# state1.should_exit_search(rating) -> returns true if this is a rating that is good enough to stop
+    def should_exit_search(self, rating):
+        curr_piece = self.get_current_piece_name()
+        if curr_piece == "t":
+            print("ERROR: we are being asked to choose a final move for the thief")
+            return True
+        if curr_piece == "p1":
+            if rating[1] == 0:
+                return True
+            return False
+        if curr_piece == "p2":
+            if rating[2] == 0:
+                return True
+            return False
+        print("ERROR: piece_name is not valid!!!")
+        return True
+
+    def print_state(self):
+        self.print_board()
