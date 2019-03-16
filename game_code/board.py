@@ -464,7 +464,7 @@ class Board(object):
         # get dist(p1, thief)
         p1_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p1, col_p1, 8)
         # return dist(p1, thief)
-        return p1_t_dist
+        return p1_t_dist - 1
 
     def p2_greedy_rating(self):
         # get thief space
@@ -476,7 +476,7 @@ class Board(object):
         # get dist(p2, thief)
         p2_t_dist = self.get_distance_between_spaces(row_t, col_t, row_p2, col_p2, 8)
         # return dist(p2, thief)
-        return p2_t_dist
+        return p2_t_dist -1
     
     def get_rating(self):
         #TODO: add some stuff here to make it always use the "cooperative" when guessing what the thief will do
