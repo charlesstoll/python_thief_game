@@ -2,6 +2,7 @@
 # Emma Smith
 from time import sleep
 import RPi.GPIO as GPIO
+from Adafruit_BNO055 import BNO055
 global L298N_IN1
 global L298N_IN2
 global L298N_IN3
@@ -10,6 +11,7 @@ global L298N_ENA
 global L298N_ENB
 global pwm_a
 global pwm_b
+bno = BNO055.BNO055(serial_port='/dev/serial0', rst=18)
 
 def setup():
     global L298N_IN1
@@ -143,6 +145,29 @@ def command_arbiter(command, time):
         RobotBACK(time)
     else:
         return -1
+
+
+def get_turn_amount(new_direction):   
+    heading, roll, pitch = bno.read_euler()
+    current_direction = heading
+
+    turn_amount = new_direction -current_direction 
+    turn_amount = (turn_amount + 180) % 360 - 180
+    return turn_amount
+
+
+def turn_to_angle(desired_angle):
+   turn_amount = get_turn_amount(desired_angle) 
+   # If should be turning left
+   if turn_amount < 0:
+       while turn_amount < -2:
+           RobotLEFT(0.01)
+           turn_amount = get_turn_amount(float(desired_angle))
+   elif turn_amount > 0:
+        while turn_amount > 2:
+            RobotRIGHT(0.01)
+            turn_amount = get_turn_amount(float(desired_angle))
+
 
 def cleanup():
     GPIO.cleanup()

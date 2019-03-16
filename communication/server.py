@@ -33,8 +33,9 @@ def main():
         print('Connection from ', client_address)
         client_input = connection.recv(20).decode('ascii')
         print('Received {}'.format(client_input))
+        client_input = client_input.split(",")
         if client_input:
-            move_robot(client_input)
+            move_robot(client_input[0], client_input[1])
 
             # Send acknowledge signal back to client
             data = b'ack'
@@ -65,7 +66,7 @@ def correct_for_drift():
     # Arbitrary threshold is set up right now. Need to test the ripple dance cycle to find out
     # how precisely and accurately we can rotate the hexapod
 
-def move_robot(command):
+def move_robot(degrees, distance):
     """
     Looks in the current working directory for a text file with the type of robot
     that this script is running on.
@@ -96,9 +97,15 @@ def move_robot(command):
         correct_for_drift()
         send_motion_command(command, hexapod_motions)
     elif robot_type == 'vikingbot0':
-        send_motion_command(command, vikingbot0_motions) 
+        turn_to_angle(degrees)
+        # Multiplier tbd
+        sleep_time = distance * 1 
+        RobotFWD(sleep_time)
     elif robot_type == 'vikingbot1':
-        send_motion_command(command, vikingbot1_motions) 
+        turn_to_angle(degrees)
+        # Multiplier tbd
+        sleep_time = distance * 1
+        RobotFWD(sleep_time)
 
 def send_motion_command(client_command, motion_command_dict):
     """

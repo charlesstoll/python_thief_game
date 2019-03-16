@@ -2,6 +2,7 @@
 # Emma Smith
 from time import sleep
 import RPi.GPIO as GPIO
+from Adafruit_BNO055 import BNO055
 global L298N_IN1
 global L298N_IN2
 global L298N_IN3
@@ -10,6 +11,7 @@ global L298N_ENA
 global L298N_ENB
 global pwm_a
 global pwm_b
+bno = BNO055.BNO055(serial_port='/dev/serial0', rst=18)
 
 def setup():
     global L298N_IN1
@@ -22,14 +24,15 @@ def setup():
     global pwm_b
 
 #switches on the H-bridge
-    L298N_IN1 = 37
-    L298N_IN2 = 35
-    L298N_IN3 = 33
-    L298N_IN4 = 31
-    L298N_ENA = 36
-    L298N_ENB = 32
+    L298N_IN1 = 26
+    L298N_IN2 = 19
+    L298N_IN3 = 13
+    L298N_IN4 = 6
+    L298N_ENA = 16
+    L298N_ENB = 12
 
-    GPIO.setmode(GPIO.BOARD)
+
+    GPIO.setmode(GPIO.BCM)
 
     #initializing GPIO pins to low outputs 
     GPIO.setup(L298N_IN1, GPIO.OUT)
@@ -133,6 +136,15 @@ def RobotSTOP():
     GPIO.output(L298N_IN4, GPIO.LOW)
 
 
+def get_turn_amount(new_direction):   
+    heading, roll, pitch = bno.read_euler()
+    current_direction = heading
+
+    turn_amount = new_direction -current_direction 
+    turn_amount = (turn_amount + 180) % 360 - 180
+    return turn_amount
+
+
 def command_arbiter(command, time):
     if command is 'w':
         RobotFWD(time)
@@ -145,13 +157,22 @@ def command_arbiter(command, time):
     else:
         return -1
 
+
 def cleanup():
     GPIO.cleanup()
+
+
 if __name__ == '__main__':
     setup()
     while True:
-        command = raw_input("Direction: " )
-        duration = raw_input("time: ")
-        duration = float(duration)
-        command_arbiter(command, duration)
+        command = raw_input("Direction (degrees): " )
+        turn_amount = get_turn_amount(float(command))
+        if turn_amount < 0:
+            while turn_amount < -2:
+                RobotLEFT(0.01)
+                turn_amount = get_turn_amount(float(command))
+        elif turn_amount > 0:
+            while turn_amount > 2:
+                RobotRIGHT(0.01)
+                turn_amount = get_turn_amount(float(command))
     cleanup()

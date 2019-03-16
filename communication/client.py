@@ -12,14 +12,14 @@ from time import sleep
 
 testing = 0
 
-def send(ip_address, move_direction):
+def send(ip_address, move_direction, move_distance):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
     server_address = (ip_address, 65432)
     print('Connection to {} port {}'.format(*server_address))
     sock.connect(server_address)
 
-    message = move_direction.encode('ascii')
+    message = move_direction.encode('ascii') + "," move_distance.encode('ascii')
     print('Sending \"{}\"'.format(message))
     sock.sendall(message)
 
@@ -28,14 +28,10 @@ def send(ip_address, move_direction):
     sock.close()
 
 if(testing == 1):
-    send('127.0.0.1', 'up')
+    send('127.0.0.1', '90', '2')
     sleep(2)
-    send('127.0.0.1', 'down')
+    send('127.0.0.1', '80', '1.5')
     sleep(2)
-    send('127.0.0.1', 'left_down')
+    send('127.0.0.1', '70', '3')
     sleep(2)
-    send('127.0.0.1', 'left_up')
-    sleep(2)
-    send('127.0.0.1', 'right_down')
-    sleep(2)
-    send('127.0.0.1', 'right_up')
+    send('127.0.0.1', '60', '2')
