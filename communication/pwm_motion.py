@@ -157,7 +157,7 @@ def get_turn_amount(new_direction):
 
 
 def turn_to_angle(desired_angle):
-   turn_amount = get_turn_amount(desired_angle) 
+   turn_amount = get_turn_amount(float(desired_angle))
    # If should be turning left
    if turn_amount < 0:
        while turn_amount < -2:
