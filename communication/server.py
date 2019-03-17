@@ -56,12 +56,33 @@ def get_orientation():
 
 def correct_for_drift():
     global starting_orientation
-
-    # Query the real heading
     heading, roll, pitch = bno.read_euler()
 
     print("In correct_for_drift(), we are comparing the current heading {0:0.2F} against the starting orientation {0:0.2F}".
             format(heading, starting_orientation))
+
+    turn_amount = get_turn_amount(float(starting_orientation))
+    print("We need to correct for {} degrees".format(turn_amount))
+    # If should be turning left
+    if turn_amount < 0:
+        while turn_amount < -2:
+            command_arbiter('qq')
+            turn_amount = get_turn_amount(float(starting_orientation))
+    elif turn_amount > 0:
+        while turn_amount > 2:
+            command_arbiter('ee')
+            turn_amount = get_turn_amount(float(starting_orientation))
+
+
+
+def get_turn_amount(new_direction):   
+    heading, roll, pitch = bno.read_euler()
+    current_direction = heading
+
+    turn_amount = new_direction -current_direction 
+    turn_amount = (turn_amount + 180) % 360 - 180
+    return turn_amount
+
     
     # Arbitrary threshold is set up right now. Need to test the ripple dance cycle to find out
     # how precisely and accurately we can rotate the hexapod
@@ -72,30 +93,11 @@ def move_robot(degrees, distance):
     that this script is running on.
     """
     global robot_type
-    hexapod_motions = {'up'         : ['9', 'wd', 'w'],
-                       'left_up'    : ['9',  'w', 'sd'],
-                       'left_down'  : ['7', 'wa', 'w', 'd'],
-                       'right_up'   : [''],
-                       'right_down' : [''],
-                       'down'       : ['10', 'sa', '2', 'a', 'w']}
-
-    vikingbot1_motions = {'up'          : ['1.35', 'a', '1.5', 'w'],
-                          'left_up'     : ['0.68', 'a', '1.3', 'w', '0.74', 'a', '0.4', 's'],
-                          'left_down'   : ['0.8', 'd', '1.1', 'w', '0.8', 'd', '0.6', 's'],
-                          'right_up'    : ['0.7', 'd', '1.1', 'w', '0.7', 'd', '0.2', 's'],
-                          'right_down'  : ['0.7', 'a', '1.1', 'w', '0.7', 'a', '0.5', 's'], 
-                          'down'        : ['1.35', 'a', '1.35', 'w']}
-    vikingbot0_motions = {'up'         : ['1.05', 'a', '2.2', 'w'],
-                          'left_up'    : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
-                          'left_down'  : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
-                          'right_up'   : ['0.6', 'd', '1.5', 'w', '0.6', 'd', '0.9', 's'],
-                          'right_down' : ['0.6', 'a', '1.5', 'w', '0.6', 'a', '0.9', 's'],
-                          'down'       : ['1.05', 'a', '2.2', 'w']}
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
         correct_for_drift()
-        send_motion_command(command, hexapod_motions)
+        #send_motion_command(command, hexapod_motions)
     elif robot_type == 'vikingbot0':
         turn_to_angle(degrees)
         # Multiplier tbd
@@ -107,43 +109,6 @@ def move_robot(degrees, distance):
         sleep_time = distance * 1
         RobotFWD(float(sleep_time))
 
-def send_motion_command(client_command, motion_command_dict):
-    """
-    Process the motion command from the user and send the command sequence to the
-    robot motion script.
-    """
-    global robot_type
-    global starting_orientation
-    # This line will give us a list of strings
-    command_sequence = motion_command_dict[client_command]
-    # Some commands are sent over and over again. Keep track of this here
-    command_multiplier = 0
-    multiplier_present = False
-    command_duration = 0
-
-    for command in command_sequence:
-        if robot_type is 'hexapod':
-            # Check if we have a multiplier
-            if command.isdigit():
-                if robot_type is 'hexapod':
-                    command_multiplier = int(command)
-                    multiplier_present = True
-            else:
-                if multiplier_present:
-                    # Send the command X times
-                    for x in range(0, command_multiplier + 1):
-                        print("Sending {}".format(command))
-                        command_arbiter(command)
-                    multiplier_present = False
-                else:
-                    print("Sending {}".format(command))
-                    command_arbiter(command)
-
-        else:
-            try:
-                command_duration = float(command)
-            except ValueError:
-                command_arbiter(command, command_duration)
 
 def determine_robot_model():
     # Check what kind of robot this script is running on

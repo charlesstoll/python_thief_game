@@ -10,7 +10,7 @@ import sys
 import re
 from time import sleep
 
-testing = 0
+testing = 1
 
 def send(ip_address, move_direction, move_distance):
     sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -19,9 +19,10 @@ def send(ip_address, move_direction, move_distance):
     print('Connection to {} port {}'.format(*server_address))
     sock.connect(server_address)
 
-    message = move_direction.encode('ascii') + "," move_distance.encode('ascii')
+    #message = move_direction.encode('ascii') + "," + move_distance.encode('ascii')
+    message = "{0},{1}".format(move_direction, move_distance)
     print('Sending \"{}\"'.format(message))
-    sock.sendall(message)
+    sock.sendall(message.encode('ascii'))
 
     data = sock.recv(3)
     print('Received: \"{}\"'.format(data))
