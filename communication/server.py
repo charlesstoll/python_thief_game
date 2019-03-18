@@ -14,7 +14,7 @@ import time
 from Adafruit_BNO055 import BNO055
 
 global robot_type
-global starting_orientation
+global bno
 
 def main():
     host = ''
@@ -44,38 +44,42 @@ def main():
         else:
             print('no data from', client_address)
 
-
-def get_orientation():
-    global starting_orientation
-
-    # Query the real heading
+def get_current_heading():
+    global bno
     heading, roll, pitch = bno.read_euler()
 
-    # Return the difference between the current heading and the starting orientation
-    return heading - starting_orientation
+    return heading
+
 
 def correct_for_drift():
-    global starting_orientation
-    heading, roll, pitch = bno.read_euler()
+    heading = get_current_heading()
 
-    print("In correct_for_drift(), we are comparing the current heading {0:0.2F} against the starting orientation {0:0.2F}".
-            format(heading, starting_orientation))
+    print("In correct_for_drift(), current heading is {0:0.2F}".format(heading))
 
-    turn_amount = get_turn_amount(float(starting_orientation))
+    # We want to turn to the original orientation of the hexapod. This is zero degrees
+    # since that's the value that the BNO055 is initialized to when instantiating the object
+    turn_amount = get_turn_amount(float(0))
+
     print("We need to correct for {} degrees".format(turn_amount))
-    # If should be turning left
-    if turn_amount < 0:
-        while turn_amount < -2:
-            command_arbiter('qq')
-            turn_amount = get_turn_amount(float(starting_orientation))
-    elif turn_amount > 0:
-        while turn_amount > 2:
-            command_arbiter('ee')
-            turn_amount = get_turn_amount(float(starting_orientation))
+
+    # We'll tolerate a change of 5 degrees
+    if abs(turn_amount) > 2.5:
+        # Now check which way we need to turn
+        if turn_amount < 0:
+            print("Need to correct for a right drift")
+            while abs(turn_amount) > 2.5:
+                command_arbiter('qq')
+                turn_amount = get_turn_amount(float(0))
+        else:
+            print("Need to correct for a left drift")
+            while abs(turn_amount) > 2.5:
+                command_arbiter('ee')
+                turn_amount = get_turn_amount(float(0))
 
 
 
 def get_turn_amount(new_direction):   
+    global bno
     heading, roll, pitch = bno.read_euler()
     current_direction = heading
 
@@ -84,9 +88,6 @@ def get_turn_amount(new_direction):
     return turn_amount
 
     
-    # Arbitrary threshold is set up right now. Need to test the ripple dance cycle to find out
-    # how precisely and accurately we can rotate the hexapod
-
 def move_robot(degrees, distance):
     """
     Looks in the current working directory for a text file with the type of robot
@@ -132,13 +133,10 @@ def determine_robot_model():
 if __name__ == "__main__":
     # Store the model of the robot this script is running on
     global robot_type
-    global starting_orientation
+    global bno
     robot_type = determine_robot_model()
 
     bno = BNO055.BNO055(serial_port='/dev/serial0', rst=18)
-    heading, roll, pitch = bno.read_euler()
-    starting_orientation = heading
-    print("Starting orientation (virtual North) is {0:0.2F}".format(starting_orientation)) 
 
     if not bno.begin():
         raise RuntimeError('Failed to initialize BNO055! Is the sensor connected?')
