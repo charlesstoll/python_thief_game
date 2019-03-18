@@ -62,20 +62,21 @@ def correct_for_drift():
 
     print("We need to correct for {} degrees".format(turn_amount))
 
-    # We'll tolerate a change of 5 degrees
-    if abs(turn_amount) > 2.5:
+    # We'll tolerate a change of 4 degrees
+    if abs(turn_amount) > 2:
         # Now check which way we need to turn
         if turn_amount < 0:
             print("Need to correct for a right drift")
-            while abs(turn_amount) > 2.5:
+            while abs(turn_amount) > 2:
+                # Send the command to rotate left about 2 degrees
                 command_arbiter('qq')
                 turn_amount = get_turn_amount(float(0))
         else:
             print("Need to correct for a left drift")
-            while abs(turn_amount) > 2.5:
+            while abs(turn_amount) > 2:
+                # Send the command to rotate right about 2 degrees
                 command_arbiter('ee')
                 turn_amount = get_turn_amount(float(0))
-
 
 
 def get_turn_amount(new_direction):   
@@ -97,8 +98,10 @@ def move_robot(degrees, distance):
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
+        # First, check if we're still orientate the same direction. If not, correct our orientation
         correct_for_drift()
-        #send_motion_command(command, hexapod_motions)
+        # Then interpret the movements
+        hexapod_motion_handler(degrees, distance)
     elif robot_type == 'vikingbot0':
         turn_to_angle(degrees)
         # Multiplier tbd
@@ -109,6 +112,11 @@ def move_robot(degrees, distance):
         # Multiplier tbd
         sleep_time = distance * 1
         RobotFWD(float(sleep_time))
+
+def hexapod_motion_handler(degrees, distance):
+    if degrees < 30 or degrees > 270: 
+        # Up
+        command_arbiter('')
 
 
 def determine_robot_model():
