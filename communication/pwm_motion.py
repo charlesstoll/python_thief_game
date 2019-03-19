@@ -48,8 +48,8 @@ def setup():
     pwm_b = GPIO.PWM(L298N_ENB, 500)
 
     # Initial pwms
-    pwm_a.start(50)
-    pwm_b.start(50)
+    pwm_a.start(100)
+    pwm_b.start(100)
 
 
 def RobotFWD(time):
