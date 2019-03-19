@@ -97,10 +97,15 @@ def move_robot(degrees, distance):
         correct_for_drift()
         send_motion_command(command, hexapod_motions)
     elif robot_type == 'vikingbot0':
-        turn_to_angle(degrees)
-        # Multiplier tbd
-        sleep_time = distance * 1 
-        RobotFWD(float(sleep_time))
+        if degrees == '800':
+            RobotBACK(0.5)
+            RobotFWD(0.5)
+            RobotRIGHT(2.2)
+        else:
+            turn_to_angle(degrees)
+            # Multiplier tbd
+            sleep_time = distance * 1 
+            RobotFWD(float(sleep_time))
     elif robot_type == 'vikingbot1':
         turn_to_angle(degrees)
         # Multiplier tbd
