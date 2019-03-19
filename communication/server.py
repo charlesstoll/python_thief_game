@@ -67,15 +67,15 @@ def correct_for_drift():
         # Now check which way we need to turn
         if turn_amount < 0:
             print("Need to correct for a right drift")
-            while abs(turn_amount) > 2:
+            while abs(turn_amount) > 2 and turn_amount < 0:
                 # Send the command to rotate left about 2 degrees
-                command_arbiter('qq')
+                command_arbiter(0, 'qq')
                 turn_amount = get_turn_amount(float(0))
         else:
             print("Need to correct for a left drift")
-            while abs(turn_amount) > 2:
+            while abs(turn_amount) > 2 and turn_amount > 0:
                 # Send the command to rotate right about 2 degrees
-                command_arbiter('ee')
+                command_arbiter(0, 'ee')
                 turn_amount = get_turn_amount(float(0))
 
 
@@ -84,7 +84,7 @@ def get_turn_amount(new_direction):
     heading, roll, pitch = bno.read_euler()
     current_direction = heading
 
-    turn_amount = new_direction -current_direction 
+    turn_amount = new_direction - current_direction 
     turn_amount = (turn_amount + 180) % 360 - 180
     return turn_amount
 
@@ -98,10 +98,7 @@ def move_robot(degrees, distance):
 
     print ("Robot type is " + robot_type)
     if robot_type == 'hexapod':
-        # First, check if we're still orientate the same direction. If not, correct our orientation
-        correct_for_drift()
-        # Then interpret the movements
-        hexapod_motion_handler(degrees, distance)
+        hexapod_motion_handler(int(degrees), distance)
     elif robot_type == 'vikingbot0':
         turn_to_angle(degrees)
         # Multiplier tbd
@@ -114,9 +111,48 @@ def move_robot(degrees, distance):
         RobotFWD(float(sleep_time))
 
 def hexapod_motion_handler(degrees, distance):
-    if degrees < 30 or degrees > 270: 
+    steps = 10
+    print("Received {0} degrees and {1} distance".format(degrees, distance))
+    if 330 <= degrees < 360 or 0 <= degrees < 30:
         # Up
-        command_arbiter('')
+        print("Going up")
+        for x in range(0, steps):
+            correct_for_drift()
+            command_arbiter(2, 'w')
+    elif 30 <= degrees < 90:
+        # Right up
+        print("Going right up")
+        for x in range(0, steps):
+            correct_for_drift()
+            command_arbiter(2, 'wd')
+    elif 90 <= degrees < 150:
+        # Right down
+        print("Going right down")
+        for x in range(0, steps):
+            correct_for_drift()
+            command_arbiter(2, 'sd')
+    elif 150 <= degrees < 210:
+        # Down
+        print("Going down")
+        for x in range(0, 10):
+            correct_for_drift()
+            command_arbiter(2, 's')
+    elif 210 <= degrees < 270:
+        # Left down 
+        print("Going left down")
+        for x in range(0, 10):
+            correct_for_drift()
+            command_arbiter(2, 'sa')
+    elif 270 <= degrees < 330:
+        # Left up 
+        print("Going left up")
+        for x in range(0, 8):
+            correct_for_drift()
+            command_arbiter(2, 'wa')
+    else:
+        # Dance
+        print("Dancing.")
+        command_arbiter(0, 'z')
 
 
 def determine_robot_model():
