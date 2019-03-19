@@ -18,6 +18,29 @@ class Decision_Tree(object):
         self.root_node = Node(copy.deepcopy(base_state), self)
         self.nodes_to_iterate = []
     
+    def find_breadth_first(self, depth):
+        self.nodes_to_iterate.append(self.root_node)
+        self.recursive_find_breadth_first(depth)
+        return self.root_node.best_move
+
+    def recursive_find_breadth_first(self, depth):
+        # recursive exit point. we just return the best thing we have found
+        if len(self.nodes_to_iterate) == 0:
+            return
+        # if we got a winning move, just do that move
+        if self.root_node.state.should_exit_search(self.root_node.rating):
+            return
+        # apparently we are not done so keep going
+        next_node = self.nodes_to_iterate.pop(0)
+        if next_node.depth == depth:
+            return
+        next_node.enumerate_nodes()
+        # added some new nodes so get our best move
+        next_node.update_self_and_tree_above()
+        self.nodes_to_iterate.extend(next_node.children)
+        # keep going!!!
+        self.recursive_find_breadth_first(depth)
+
     def find_depth_first(self, depth):
         self.nodes_to_iterate.append(self.root_node)
         self.recursive_find_depth_first(depth)
@@ -31,7 +54,7 @@ class Decision_Tree(object):
         if self.root_node.state.should_exit_search(self.root_node.rating):
             return
         # apparently we are not done so keep going
-        next_node = self.nodes_to_iterate.pop(0)
+        next_node = self.nodes_to_iterate.pop()
         if next_node.depth == depth:
             return
         next_node.enumerate_nodes()

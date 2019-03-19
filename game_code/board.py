@@ -9,12 +9,6 @@ from node import *
 debug = 1
 pr_debug = 0
 
-# search_styles : depth_first breadth_first test
-search_style = "breadth_first"
-# ai_function : cooperative greedy
-ai_function = "cooperative"
-
-
 class Space(object):
     def __init__(self, row, col, board, space_width=100):
         self.space_width = space_width
@@ -190,6 +184,8 @@ class Board(object):
         # used for node-base ai. options are 'cooperative' or 'greedy'
         self.p1_strategy = "cooperative"
         self.p2_strategy = "cooperative"
+
+        self.search_style = "depth_first"
 
         # create an array of spaces that we can use
         if(board_size <= 0):
@@ -478,147 +474,23 @@ class Board(object):
         # return dist(p2, thief)
         return p2_t_dist -1
     
-    def get_rating(self):
-        #TODO: add some stuff here to make it always use the "cooperative" when guessing what the thief will do
-        if(ai_function == "cooperative"):
-            return self.cooperative_rating()
-        if(ai_function == "greedy"):
-            return self.greedy_rating()
-
     # this funciton just calls the correct ai movement algorithm
     def ai_move(self, depth):
-        if(search_style == "test"):
-            self.ai_move_test(self.char_order[self.next_to_move])
+        search_style = self.search_style
+        print("doing a search using a " + search_style + " style search")
+        print("p1 is being " + self.p1_strategy + " and p2 is being " + self.p2_strategy)
         if(search_style == "depth_first"):
-            print("doing depth_first searching")
-            self.ai_move_depth_first(depth)
-        if(search_style == "breadth_first"):
             tree = Decision_Tree(self)
             best_move = tree.find_depth_first(depth)
             print("***************************************BEST MOVE IS " + best_move)
             self.move_piece(self.char_order[self.next_to_move], best_move, send=1)
             print("I made a move!! " + self.char_order[self.next_to_move] +" went " + best_move)
-
-
-    def ai_move_test(self, piece_name):
-        if(self.move_piece(piece_name, 'right')):
-            print("I made a move!! I went right")
-            return
-        if(self.move_piece(piece_name, 'up')):
-            print("I made a move!! I went up")
-            return
-        if(self.move_piece(piece_name, 'left')):
-            print("I made a move!! I went left")
-            return
-        if(self.move_piece(piece_name, 'down')):
-            print("I made a move!! I went down")
-            return
-        self.move_piece(piece_name, 'stay')
-        print("I made a move!! I just stayed still")
-    
-    # define this algorithm just sets up anything that needs to be done BEFORE/AFTER recursion
-    def ai_move_depth_first(self, depth):
-        root = copy.copy(self)
-        move, rating = root.get_best_move_depth_first(depth)
-        self.move_piece(self.char_order[self.next_to_move], move, send=1)
-        print("I made a move!! " + self.char_order[self.next_to_move] +" went " + move)
-
-    # does the recursion
-    def get_best_move_depth_first(start_point, depth):
-        max_depth = 9
-        # exit if we found a game over state or if we hit recursion bottom
-        rating = start_point.get_rating()
-        #print("my rating is: " + str(rating))
-        if(rating == 0 or depth == 0):
-            #print("RECURSION EXIT POINT =====================================")
-            return ('none', rating)
-        
-        # not exiting, so we must be recursing!!!!! so we should set that shit up...
-        # first, copy the game 4 times (we have 4 possible moves)
-        op_stay = copy.deepcopy(start_point)
-        op_left = copy.deepcopy(start_point)
-        op_right = copy.deepcopy(start_point)
-        op_updown = copy.deepcopy(start_point)
-        
-        # now, do recursion on each new state and remember the max/min values for decision making
-        maximum = -1
-        minimum = 1000
-        best_max_move = 'none'
-        best_min_move = 'none'
-
-        tmp_move = 'none'
-        tmp_score = 0
-        curr_piece = start_point.get_current_piece()
-        #print("starting recursion at depth: " + str(depth) + "==================================")
-        if(op_stay.move_piece(start_point.char_order[start_point.next_to_move], 'stay')):
-            op_stay.increment_turn()
-            if(depth > 1 and pr_debug):
-                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes stay")
-            tmp_move, tmp_score = op_stay.get_best_move_depth_first(depth - 1)
-            if(tmp_score <= minimum):
-                best_min_move = 'stay'
-                minimum = tmp_score
-            if(tmp_score >= maximum):
-                best_max_move = 'stay'
-                maximum = tmp_score
- 
-        if(op_left.move_piece(start_point.char_order[start_point.next_to_move], 'left')):
-            op_left.increment_turn()
-            if(depth > 1 and pr_debug):
-                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes left")
-            tmp_move, tmp_score = op_left.get_best_move_depth_first(depth - 1)
-            if(tmp_score <= minimum):
-                best_min_move = 'left'
-                minimum = tmp_score
-            if(tmp_score >= maximum):
-                best_max_move = 'left'
-                maximum = tmp_score
-        
-        if(op_right.move_piece(start_point.char_order[start_point.next_to_move], 'right')):
-            op_right.increment_turn()
-            if(depth > 1 and pr_debug):
-                print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes right")
-            tmp_move, tmp_score = op_right.get_best_move_depth_first(depth - 1)
-            if(tmp_score <= minimum):
-                best_min_move = 'right'
-                minimum = tmp_score
-            if(tmp_score >= maximum):
-                best_max_move = 'right'
-                maximum = tmp_score
-        if(start_point.get_space(curr_piece.row, curr_piece.col).orientation == 'up'):
-            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'down')):
-                op_updown.increment_turn()
-                if(depth > 1 and pr_debug):
-                    print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes down")
-                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
-                if(tmp_score <= minimum):
-                    best_min_move = 'down'
-                    minimum = tmp_score
-                if(tmp_score >= maximum):
-                    best_max_move = 'down'
-                    maximum = tmp_score
-        else:
-            if(op_updown.move_piece(start_point.char_order[start_point.next_to_move], 'up')):
-                op_updown.increment_turn()
-                if(depth > 1 and pr_debug):
-                    print(((max_depth-depth) * '  ') + "If " + start_point.char_order[start_point.next_to_move] + " goes up")
-                tmp_move, tmp_score = op_updown.get_best_move_depth_first(depth - 1)
-                if(tmp_score <= minimum):
-                    best_min_move = 'up'
-                    minimum = tmp_score
-                if(tmp_score >= maximum):
-                    best_max_move = 'up'
-                    maximum = tmp_score
-
-        # now, we return the best move that we found
-        if(start_point.char_order[start_point.next_to_move] == 't'):
-            if(depth > 1 and pr_debug):
-                print(((max_depth-depth) * '  ') + "figuring out the thief's move, it would go: " + best_max_move)
-            return (best_max_move, maximum)
-        else:
-            if(depth > 1 and pr_debug):
-                print(((max_depth-depth) * '  ') + "figure out " + start_point.char_order[start_point.next_to_move] + "'s turn. it would go: " + best_min_move)
-            return (best_min_move, minimum)
+        if(search_style == "breadth_first"):
+            tree = Decision_Tree(self)
+            best_move = tree.find_breadth_first(depth)
+            print("BEST MOVE IS " + best_move)
+            self.move_piece(self.char_order[self.next_to_move], best_move, send=1)
+            print("I made a move!! " + self.char_order[self.next_to_move] +" went " + best_move)
 
         # functions for node-based ai stuffs
 # state1.get_options() -> return a list of all DOABLE options for how to move from this state
