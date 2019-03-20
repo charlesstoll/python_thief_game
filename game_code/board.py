@@ -147,7 +147,7 @@ class Piece(object):
         # are on a space that is oriented "down" so everything here looks a
         # little backwards but it is not
         print("CHECKING SEND HERE")
-        if(send == 1 && debug == 0):
+        if(send == 1 and debug == 0):
             print("sending--------------------------------------------------------------------")
             piece_name = self.board.char_order[self.board.next_to_move]
             cv_info.move_robot(piece_name, self.ip_address, next_space.row, next_space.col)
