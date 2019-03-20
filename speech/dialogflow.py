@@ -4,6 +4,9 @@ import boto3
 from pygame import mixer
 project_id = "gameplay-32385"
 
+def record_sound(num_seconds, file_name):
+    bash_command = "arecord -D -f S16_LE -c1 -r44100 -d " + str(seconds) + " " + file_name
+    os.system(bash_command) 
 
 def detect_intent_audio(project_id, session_id, audio_file_path,
                         language_code):
@@ -92,4 +95,4 @@ current_directory = os.getcwd()
 credentials = os.path.join(current_directory, 'gameplay-32385-fdc504fdecef.json')
 os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials
 result = detect_intent_texts(project_id, "1-1-1-1-1", ["go right"], 'en-US')
-print result
+print(str(result))

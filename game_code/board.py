@@ -1,13 +1,16 @@
 import sys
 import math
 sys.path.append("../communication/")
-import client
+sys.path.append("/home/stoll/Robotics_opencv")
+from Robot_Class_Tracking import *
 # used for ai and copying the game state
 import copy
 from node import *
 
-debug = 1
+debug = 0
 pr_debug = 0
+
+cv_info = Robot_Track(0)
 
 class Space(object):
     def __init__(self, row, col, board, space_width=100):
@@ -99,7 +102,7 @@ class Piece(object):
         else:
             return
         if((debug == 0) and (send == 1)):
-            client.send(self.ip_address, command)
+            print("i would have sent somethin out here but not anymore")
         self.direction = new_direction
 
     def place(self, row, col):
@@ -143,21 +146,12 @@ class Piece(object):
         # NOTE: if the space we are moving into is oriented "up," then we 
         # are on a space that is oriented "down" so everything here looks a
         # little backwards but it is not
-        if(next_space.orientation == "up"):
-            if(direction == "up"):
-                self.turn(N, send)
-            if(direction == "left"):
-                self.turn(SW, send)
-            if(direction == "right"):
-                self.turn(SE, send)
-        if(next_space.orientation == "down"):
-            if(direction == "down"):
-                self.turn(S, send)
-            if(direction == "left"):
-                self.turn(NW, send)
-            if(direction == "right"):
-                self.turn(NE, send)
- 
+        print("CHECKING SEND HERE")
+        if(send == 1 && debug == 0):
+            print("sending--------------------------------------------------------------------")
+            piece_name = self.board.char_order[self.board.next_to_move]
+            cv_info.move_robot(piece_name, self.ip_address, next_space.row, next_space.col)
+
         return self.place(next_space.row, next_space.col)
 
 
@@ -175,8 +169,8 @@ class Policeman(Piece):
     def __repr__(self):
         return "Policeman: " + Piece.__repr__(self)
 
-ip_addr_p = ["127.0.0.1", "127.0.0.1"]
-ip_addr_t = "127.0.0.1"
+ip_addr_p = ["192.168.137.66", "192.168.137.4"]
+ip_addr_t = "192.168.137.7"
 
 class Board(object):
     def __init__(self, board_size=4, space_width=100, num_police=2):

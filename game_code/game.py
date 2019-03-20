@@ -1,8 +1,23 @@
 import sys
+import os
 sys.path.append("../speech/")
 from board import *
+import execnet
 
 
+
+def speak(text):
+    command = "python2.7 ../speech/dialogflow.py speak " + text
+    os.system(command)
+
+def record(seconds, filename):
+    command = "python2.7 ../speech/dialogflow.py record " + str(seconds) + " " + filename
+    os.system(command)
+
+def get_last_intent():
+    with open('intent_output.txt', 'r') as f:
+        intent = f.read()
+        return intent
 
 using_ai = 0
 exit = 0
@@ -41,6 +56,7 @@ while(exit != 1):
     #    tmp_char_order.append(input("Who goes third? t/p1/p2  "))
     #    board.char_order = tmp_char_order
     
+    using_voice_commands = False
     if(input("Would you like to use voice commands? y/n  ") == "y"):
         using_voice_commands = True
     while(board.game_over == 0):
@@ -53,11 +69,17 @@ while(exit != 1):
         print("What would " + board.char_order[board.next_to_move] + " like to do?")
         moved = 0
         while(moved == 0):
-            move = input("move up/down/left/right/stay: ")
+            if(using_voice_commands):
+                speak("please state your move now")
+                record(5, "last_human_command.wav")
+                intent = get_last_intent()
+                move = intent.lower()
+            else:
+                move = input("move up/down/left/right/stay: ")
             if(move == "stay"):
                 moved = 1
             else:
-                if(board.move_piece(board.char_order[board.next_to_move], move)):
+                if(board.move_piece(board.char_order[board.next_to_move], move, send=1)):
                     moved = 1
             if(moved == 1):
                 board.increment_turn()
@@ -66,3 +88,4 @@ while(exit != 1):
     print("******CONGRATULATIONS!!! YOU CAUGHT THE STUPID THIEF!*********************")
     print("**************************************************************************")
     print("**************************************************************************")
+    speak("Maybe next time you wont play so poorly? Probably not.")
