@@ -1,12 +1,9 @@
 import dialogflow_v2 as dialogflow
 import os
 import boto3
+import sys
 from pygame import mixer
 project_id = "gameplay-32385"
-
-def record_sound(num_seconds, file_name):
-    bash_command = "arecord -D -f S16_LE -c1 -r44100 -d " + str(seconds) + " " + file_name
-    os.system(bash_command) 
 
 def detect_intent_audio(project_id, session_id, audio_file_path,
                         language_code):
@@ -38,7 +35,10 @@ def detect_intent_audio(project_id, session_id, audio_file_path,
 			response.query_result.intent_detection_confidence))
 
     print ("Response should be: ", response.query_result.fulfillment_text, "\n")
-
+    reply = response.query_result.fulfillment_text + "\n"
+    with open('intent_output.txt', 'w') as f:
+      f.write('{}'.format(response.query_result.intent.display_name))
+      f.close()
 
     return response.query_result.fulfillment_text
 	
@@ -73,12 +73,19 @@ def detect_intent_texts(project_id, session_id, texts, language_code):
         speak(response.query_result.fulfillment_text)
     return response.query_result.intent.display_name
 
+def record(seconds, filename):
+    command = "arecord -f S16_LE -c1 -r44100 -d " + str(seconds) + " " + filename
+    os.system(command)
+
 def speak (data):
     polly = boto3.client('polly')
     spoken_text = polly.synthesize_speech(Text = data, OutputFormat = 'mp3', VoiceId = 'Matthew')
     with open('output.mp3', 'wb') as f:
         f.write(spoken_text['AudioStream'].read())
         f.close()
+    command = "mpg321 output.mp3"
+    os.system(command)
+
 # Will not work on my linux distributable
 """
 	mixer.init()
@@ -90,9 +97,40 @@ def speak (data):
 	mixer.quit()
 	os.remove('output.mp3')
 """
+if len(sys.argv) <= 1:
+  print("not enough arguments present")
 
-current_directory = os.getcwd()
-credentials = os.path.join(current_directory, 'gameplay-32385-fdc504fdecef.json')
-os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials
-result = detect_intent_texts(project_id, "1-1-1-1-1", ["go right"], 'en-US')
-print(str(result))
+if sys.argv[1] == "example":
+  current_directory = os.getcwd()
+  credentials = os.path.join(current_directory, 'gameplay-32385-fdc504fdecef.json')
+  os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials
+  result = detect_intent_texts(project_id, "1-1-1-1-1", ["go right"], 'en-US')
+  print(str(result))
+
+if sys.argv[1] == "speak":
+  text = ""
+  i = 2
+  while i < len(sys.argv):
+    text = text + sys.argv[i]
+    if not i == len(sys.argv) - 1:
+      text = text + " "
+    i = i + 1
+  print("the text I got was: " + text)
+  speak(text)
+
+if sys.argv[1] == "record":
+  seconds = int(sys.argv[2])
+  filename = sys.argv[3]
+  record(seconds, filename)
+  current_directory = os.getcwd()
+  credentials = os.path.join(current_directory, 'gameplay-32385-fdc504fdecef.json')
+  audio_path = os.path.join(current_directory, filename)
+  os.environ["GOOGLE_APPLICATION_CREDENTIALS"] = credentials
+  result = detect_intent_audio(project_id, "1-1-1-1-1", audio_path, 'en-US')
+
+
+
+
+
+
+
