@@ -1,15 +1,16 @@
 import sys
 import math
 sys.path.append("../communication/")
-sys.path.append("/home/stoll/Robotics_opencv")
+sys.path.append("../vision/")
 from Robot_Class_Tracking import *
 # used for ai and copying the game state
 import copy
 from node import *
 
-debug = 0
+debug = 1
 pr_debug = 0
 
+# this line needs to be changed to pass in the correct value of the camera index
 cv_info = Robot_Track(0)
 
 class Space(object):
@@ -169,7 +170,7 @@ class Policeman(Piece):
     def __repr__(self):
         return "Policeman: " + Piece.__repr__(self)
 
-ip_addr_p = ["192.168.137.66", "192.168.137.4"]
+ip_addr_p = ["192.168.137.4", "192.168.137.66"]
 ip_addr_t = "192.168.137.7"
 
 class Board(object):
